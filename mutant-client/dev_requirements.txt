@@ -1,5 +1,4 @@
 # Dependences to test, build and release the project
-tox
 build
 pytest
 setuptools-scm

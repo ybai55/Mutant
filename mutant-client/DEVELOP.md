@@ -3,14 +3,11 @@
 by the PyPA organization and documented at
 https://packaging.python.org 
 
-### Testing
-It uses [tox](https://pypi.org/project/tox/) for running tests across
-multiple python & dependency versions.
 
 ## Environment
 
 To set up an environment allowing you to test, build or distribute the
-project, you will need to set up and activate a virtuatl environment
+project, you will need to set up and activate a virtual environment
 specific to this library. For example:
 
 ```
@@ -31,12 +28,6 @@ pip install -r dev_requirements.txt
 Unit tests are in the `/tests` directory.
 
 To run unit tests using your current environment, run `pytest`.
-
-To run unit tests across multiple combinations of Python and
-dependency versions, run `tox`. The test matrix is defined in
-`tox.ini`; for more information, see the
-[tox documentation](https://tox.wiki/en/latest/).
-
 
 ## Manual Build
 
