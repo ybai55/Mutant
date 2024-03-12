@@ -5,7 +5,7 @@ on:
     tags:
       - '*'
     branches:
-      - main-cd-client
+      - main
 
 env:
   REGISTRY: ghcr.io
