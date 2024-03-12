@@ -2,8 +2,7 @@
 name = "mutant_client"
 dynamic = ["version"]
 dependencies = [
-    'pyarrow ~= 9.0',
-    'numpy ~= 1.23'
+    'pyarrow ~= 9.0'
 ]
 authors = [
     { name="Yang Bai", email="beck@hawk.iit.edu"}
