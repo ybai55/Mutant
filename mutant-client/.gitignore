@@ -12,3 +12,6 @@ venv
 # due to using tox and pytest
 .tox
 .cache
+
+# ignore idea
+**.idea/
