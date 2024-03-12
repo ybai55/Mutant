@@ -1,6 +1,19 @@
 name: Mutant Client Test
 
 on: [push, pull_request]
+  branches: ['main']
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'mutant-client/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'mutant-client/**'
 
 jobs:
   test:
