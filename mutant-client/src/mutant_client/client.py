@@ -1,7 +1,8 @@
 import pyarrow.parquet
 import numpy
 
-def init(url=None, app_name=None, model_version=None, layer=None)
+
+def init(url=None, app_name=None, model_version=None, layer=None):
     """Initialize Mutant client to use a particular"""
 
     return True
