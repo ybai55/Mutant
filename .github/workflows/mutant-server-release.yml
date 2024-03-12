@@ -12,7 +12,7 @@ env:
   IMAGE_NAME: "ghcr.io/mutant/mutant-server"
 
 jobs:
-  build-and-relese:
+  build-and-release:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout
