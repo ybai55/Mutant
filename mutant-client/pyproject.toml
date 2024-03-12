@@ -4,7 +4,6 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "mutant_client"
-version = "0.0.1"
 dependencies = [
     'pyarrow ~= 9.0',
     'numpy ~= 1.23'
@@ -24,3 +23,10 @@ classifiers = [
 [project.urls]
 "Homepage" = "https://github.com/ybai55/Mutant"
 "Bug Tracker" = "https://github.com/ybai55/Mutant/issues"
+
+[tool.pytest.init_options]
+pythonpath = [
+    "src"
+]
+
+[tool.setuptools_scm]
