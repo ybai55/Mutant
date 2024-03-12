@@ -18,3 +18,7 @@ To run test, run `pytest`
 To run the server locally, in development mode, run `uvicorn mutant_server:app --reload`
 
 ## Building
+
+## Docker
+
+To build the docker image locally, run `bin/build`.
