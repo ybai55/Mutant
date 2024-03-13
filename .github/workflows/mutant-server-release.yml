@@ -63,4 +63,25 @@ jobs:
           Docker Image: `${{steps.tag.outputs.tag_name}}`
         artifacts: "mutant-client/dist/mutant_client-${{steps.version.outputs.version}}.tar.gz"
         prerelease: true
+    - name: Update Tag
+      uses: richardsimko/update-tag@v1.0.5
+      if: "!startsWith(github.ref, 'refs/tags/')"
+      with:
+          tag_name: latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     - name: Release Latest
+      uses: ncipollo/release-action@v1.11.1
+      if: "!startsWith(github.refs, 'refs/tags/')"
+      with:
+        tag: "latest"
+        name: "Latest"
+        body: |
+          Version: `${{steps.version.outpus.version}}`
+          Git ref: `${{github.ref}}`
+          Build Date: `${{steps.builddate.outputs.builddate}}`
+          PIP Package: `mutant_client-${{steps.version.outpus.version}}.tar.gz`
+          Docker Image: `${{steps.tag.outpus.tag_name}}`
+        artifacts: "mutant-client/dist/mutant_client-${{steps.version.outpus.version}}.tar.gz"
+        allowUpdates: true
+        prerelease: true
