@@ -1,7 +1,7 @@
 import pytest
 from httpx import AsyncClient
 
-from ..api import app
+from mutant_server.api import app
 
 @pytest.fixture
 def anyio_backend():
