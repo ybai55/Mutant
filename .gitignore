@@ -7,3 +7,7 @@ __pycache__
 
 # ignore idea
 **.idea/
+
+**/data__nogit
+
+**/.ipynb_checkpoints

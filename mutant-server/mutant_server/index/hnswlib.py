@@ -18,25 +18,25 @@ class Hnswlib(Index):
         data1 = embedding_data['embedding_data'].to_numpy().tolist()
         dim = len(data1[0])
         num_elements = len(data1)
-        logger.debug("dimensionality is: ", dim)
-        logger.debug("total number of elements: ", num_elements)
-        logger.debug("max elements", num_elements//2)
+        # logger.debug("dimensionality is: ", dim)
+        # logger.debug("total number of elements: ", num_elements)
+        # logger.debug("max elements", num_elements//2)
 
         concatted_data = data1
-        logger.debug("concatenated length: ", len(concatted_data))
+        # logger.debug("concatenated length: ", len(concatted_data))
 
         p = hnswlib.Index(space='l2', dim=dim)  # Declaring index, possible options are l2, cosine or ip
         p.init_index(max_elements=len(data1), ef_construction=100, M=16)  # Initing idnex
         p.set_ef(10)    # Controlling the recall by setting ef:
         p.set_num_threads(4)    # Set number of threads used during batch search/construction
 
-        logger.debug("Adding first batch of %d elements..." % (len(data1)))
-        p.add_items(data1)
+        # logger.debug("Adding first batch of %d elements..." % (len(data1)))
+        p.add_items(data1, embedding_data["id"])
 
         # Query the elements for themselves and measure recall:
         labels, distances = p.knn_query(data1, k=1)
-        logger.debug(len(distances))
-        logger.debug("Recall for the first batch:", np.mean(labels.reshape(-1) == np.arange(len(data1))), "\n")
+        # logger.debug(len(distances))
+        logger.debug("Recall for the first batch:" + str(np.mean(labels.reshape(-1) == np.arange(len(data1)))))
 
         self._index = p
 
@@ -53,5 +53,11 @@ class Hnswlib(Index):
         logger.debug('index saved to .mutant/index.bin')
 
     def load(self, elements, dimensionality):
+        p = hnswlib.Index(space='l2', dim= dimensionality)
         self._index = p
         self._index.load_index(".mutant/index.bin", max_elements=elements)
+
+    # do knn_query on hnswlib to get nearest neighbors
+    def get_nearest_neighbors(self, query, k):
+        labels, distances = self._index.knn_query(query, k=k)
+        return labels, distances
