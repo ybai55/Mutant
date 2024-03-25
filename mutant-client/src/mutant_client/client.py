@@ -79,7 +79,7 @@ class Mutant:
         return x.json()
 
     def log(self, embedding_data: list, metadata: dict, input_uri: str, inference_data: dict, app: str,
-            model_version: str, layer: str, dataset: str=None, distance: float=None, category_name: str=None):
+            model_version: str, layer: str, dataset: str=None, category_name: str=None):
         """
         Logs a single embedding to the database
         """
@@ -93,7 +93,6 @@ class Mutant:
             "model_version": model_version,
             "layer": layer,
             "dataset": dataset,
-            "distance": distance,
             "category_name": category_name
         }))
 
@@ -150,8 +149,8 @@ class Mutant:
             dataset="triage"
         )
 
-    def log_batch(self, embedding_data: list, meta_data: list, input_uri: list, inference_data: list, app: Union[list, str],
-                  model_version: Union[list, str], layer: Union[list, str], dataset: list = None, distance: list = None,
+    def log_batch(self, embedding_data: list, metadata: list, input_uri: list, inference_data: list, app: Union[list, str],
+                  model_version: Union[list, str], layer: Union[list, str], dataset: list = None,
                   category_name: list = None):
         """
         Logs a batch of embeddings to the database
@@ -167,16 +166,15 @@ class Mutant:
         if isinstance(layer, str):
             layer = [layer] * len(embedding_data)
 
-        x = requests.post(self._api_url + "/add", data = json.dumps({
+        x = requests.post(self._api_url + "/add", data=json.dumps({
             "embedding_data": embedding_data,
-            "metadata": meta_data,
+            "metadata": metadata,
             "input_uri": input_uri,
             "inference_data": inference_data,
             "app": app,
             "model_version": model_version,
             "layer": layer,
             "dataset": dataset,
-            "distance": distance,
             "category_name": category_name
         }))
 
