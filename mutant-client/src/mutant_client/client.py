@@ -7,20 +7,11 @@ class Mutant:
     _api_url = "http://localhost:8000/api/v1"
     _base_metadata = {}
 
-    def __init__(self, url=None, app=None, model_version=None, layer=None):
+    def __init__(self, url=None):
         """Initialize Mutant client"""
 
         if isinstance(url, str) and url.startswith("http"):
             self._api_url = url
-
-        if isinstance(app, str) and app != "":
-            self._base_metadata["app"] = app
-
-        if isinstance(model_version, str) and model_version != "":
-            self._base_metadata["model_version"] = model_version
-
-        if isinstance(layer, str) and layer != "":
-            self._base_metadata["layers"] = layer
 
         self.url = url
 
@@ -78,8 +69,13 @@ class Mutant:
         x = requests.get(self._api_url)
         return x.json()
 
-    def log(self, embedding_data: list, metadata: dict, input_uri: str, inference_data: dict, app: str,
-            model_version: str, layer: str, dataset: str=None, category_name: str=None):
+    def log(self,
+            embedding_data: list,
+            metadata: dict,
+            input_uri: str,
+            inference_data: dict,
+            dataset: str = None,
+            category_name: str = None):
         """
         Logs a single embedding to the database
         """
@@ -89,9 +85,6 @@ class Mutant:
             "metadata": metadata,
             "input_uri": input_uri,
             "inference_data": inference_data,
-            "app": app,
-            "model_version": model_version,
-            "layer": layer,
             "dataset": dataset,
             "category_name": category_name
         }))
@@ -111,9 +104,6 @@ class Mutant:
             metadata=self._base_metadata,
             input_uri=input_uri,
             inference_data=inference_data,
-            app=self._base_metadata["app"],
-            model_version=self._base_metadata["model_version"],
-            layer=self._base_metadata["layer"],
             dataset="training"
         )
 
@@ -127,9 +117,6 @@ class Mutant:
             metadata=self._base_metadata,
             input_uri=input_uri,
             inference_data=inference_data,
-            app=self._base_metadata["app"],
-            model_version=self._base_metadata["model_version"],
-            layer=self._base_metadata["layer"],
             dataset="production"
         )
 
@@ -143,37 +130,26 @@ class Mutant:
             metadata=self._base_metadata,
             input_uri=input_uri,
             inference_data=inference_data,
-            app=self._base_metadata["app"],
-            model_version=self._base_metadata["model_version"],
-            layer=self._base_metadata["layer"],
             dataset="triage"
         )
 
-    def log_batch(self, embedding_data: list, metadata: list, input_uri: list, inference_data: list, app: Union[list, str],
-                  model_version: Union[list, str], layer: Union[list, str], dataset: list = None,
+    def log_batch(self,
+                  embedding_data: list,
+                  metadata: list,
+                  input_uri: list,
+                  inference_data: list,
+                  dataset: list = None,
                   category_name: list = None):
         """
         Logs a batch of embeddings to the database
         - pass in column oriented data lists
         """
 
-        if isinstance(app, str):
-            app = [app] * len(embedding_data)
-
-        if isinstance(model_version, str):
-            model_version = [model_version] * len(embedding_data)
-
-        if isinstance(layer, str):
-            layer = [layer] * len(embedding_data)
-
         x = requests.post(self._api_url + "/add", data=json.dumps({
             "embedding_data": embedding_data,
             "metadata": metadata,
             "input_uri": input_uri,
             "inference_data": inference_data,
-            "app": app,
-            "model_version": model_version,
-            "layer": layer,
             "dataset": dataset,
             "category_name": category_name
         }))
@@ -193,9 +169,6 @@ class Mutant:
             metadata=self._base_metadata,
             input_uri=input_uri,
             inference_data=inference_data,
-            app=self._base_metadata["app"],
-            model_version=self._base_metadata["model_version"],
-            layer=self._base_metadata["layer"],
             dataset="training"
         )
 
@@ -209,9 +182,6 @@ class Mutant:
             metadata=self._base_metadata["metadata"],
             input_uri=input_uri,
             inference_data=inference_data,
-            app=self._base_metadata["app"],
-            model_version=self._base_metadata["model_version"],
-            layer=self._base_metadata["layer"],
             dataset="production"
         )
 
@@ -225,9 +195,6 @@ class Mutant:
             metadata=self._base_metadata,
             input_uri=input_uri,
             inference_data=inference_data,
-            app=self._base_metadata["app"],
-            model_version=self._base_metadata["model_version"],
-            layer=self._base_metadata["layer"],
             dataset="triage"
         )
 

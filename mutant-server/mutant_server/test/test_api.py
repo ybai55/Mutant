@@ -22,9 +22,6 @@ async def post_one_record(ac):
         "meta_data": {},
         "input_uri": "https://example.com",
         "inference_data": {"test": "Test"},
-        "app": "yolov3",
-        "model_version": "1.0.0",
-        "layer": "pool5",
         "dataset": "coco",
     })
 
@@ -35,9 +32,6 @@ async def post_batch_records(ac):
         "metadata": [{"test": "Test"}, {"test": "Test"}],
         "input_uri": ["https://example.com", "https://example.com"],
         "inference_data": [{"test": "Test"}, {"test": "Test"}],
-        "app": ["yolov3", "yolov3"],
-        "model_version": ["1.0.0", "1.0.0"],
-        "layer": ["pool5", "pool5"],
         "dataset": "training",
         "category_name": "person"
     })
