@@ -177,7 +177,7 @@ class DuckDB(Database):
             distance,
             category_name
         FROM
-            emebeddings
+            embeddings
         WHERE
             id IN ({','.join([str(x) for x in ids])})
         ''').fetchdf().replace({np.nan: None})  # replace nan with None for json serializtion
