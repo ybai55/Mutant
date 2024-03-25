@@ -6,8 +6,9 @@ from httpx import AsyncClient
 
 @pytest.fixture
 def anyio_backend():
-    return 'asyncio'
+    return "asyncio"
+
 
 def test_init():
     mutant = Mutant()
-    assert mutant._api_url == 'http://localhost:8000/api/v1'
+    assert mutant._api_url == "http://localhost:8000/api/v1"

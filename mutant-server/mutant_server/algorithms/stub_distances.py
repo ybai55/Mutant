@@ -2,12 +2,14 @@ import numpy as np
 import json
 import ast
 
+
 def class_distances(data):
     """
     This is all very subject to change, so essentially just copy and paste from what we had before
     """
 
     return False
+
 
 # def unpack_annotations(embeddings):
 #     annotations = [json.loads(embedding['infer'])["annotations"]for embedding in embeddings]

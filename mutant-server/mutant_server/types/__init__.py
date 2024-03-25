@@ -10,6 +10,7 @@ class AddEmbedding(BaseModel):
     custom_quality_score: Union[float, list] = None
     category_name: Union[str, list] = None
 
+
 class QueryEmbedding(BaseModel):
     embedding: list
     n_results: int = 10

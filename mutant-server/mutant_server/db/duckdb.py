@@ -9,7 +9,8 @@ class DuckDB(Database):
 
     def __init__(self):
         self._conn = duckdb.connect()
-        self._conn.execute('''
+        self._conn.execute(
+            """
             CREATE TABLE embeddings (
                 id integer PRIMARY KEY, 
                 embedding_data REAL[],
@@ -18,22 +19,29 @@ class DuckDB(Database):
                 custom_quality_score REAL,
                 category_name STRING                
             ) 
-        ''')
+        """
+        )
 
         # ids to manage internal bookkeeping and *nothing else*, users should not have to care about these ids
-        self._conn.execute('''
+        self._conn.execute(
+            """
             CREATE SEQUENCE seq_id START 1;
-        ''')
+        """
+        )
 
-        self._conn.execute('''
+        self._conn.execute(
+            """
             -- change the default null sorting order to either NULLS FIRST and NULLS LAST
             PRAGMA default_null_order='NULLS LAST';
             -- change the default sorting order to either DESC or ASC
             PRAGMA default_order='DESC';
-        ''')
+        """
+        )
         return
 
-    def add_batch(self, embedding_data, input_uri, dataset=None, custom_quality_score=None, category_name=None):
+    def add_batch(
+        self, embedding_data, input_uri, dataset=None, custom_quality_score=None, category_name=None
+    ):
         """
         Add embeddings to the database
         This accepts both a single input and a list of inputs
@@ -43,7 +51,7 @@ class DuckDB(Database):
         types = [type(x).__name__ for x in [embedding_data, input_uri]]
 
         # if all of the types are 'list' - do batch mode
-        if all(x == 'list' for x in types):
+        if all(x == "list" for x in types):
             lengths = [len(x) for x in [embedding_data, input_uri]]
 
             # accepts some inputs as str or none, and this multiples them out to the correct length
@@ -58,30 +66,43 @@ class DuckDB(Database):
             data_to_insert = []
             for i in range(lengths[0]):
                 data_to_insert.append(
-                    [embedding_data[i], input_uri[i], dataset[i], custom_quality_score[i], category_name[i]])
+                    [
+                        embedding_data[i],
+                        input_uri[i],
+                        dataset[i],
+                        custom_quality_score[i],
+                        category_name[i],
+                    ]
+                )
 
             if all(x == lengths[0] for x in lengths):
-                self._conn.executemany('''
-                    INSERT INTO embeddings VALUES (nextval('seq_id'), ?, ?, ?, ?, ?)''',
-                                       data_to_insert
-                                       )
+                self._conn.executemany(
+                    """
+                    INSERT INTO embeddings VALUES (nextval('seq_id'), ?, ?, ?, ?, ?)""",
+                    data_to_insert,
+                )
                 return
 
         # if any of the types are 'list' - throw an error
         if any(x == list for x in [input_uri, dataset, custom_quality_score, category_name]):
-            raise Exception("Invalid input types. One input is a list where others are not: " + str(types))
+            raise Exception(
+                "Invalid input types. One input is a list where others are not: " + str(types)
+            )
 
         # single insert mode This should never fire because we do everything in batch mode, but given the mode away
         # from duckdb likely, I am just leaving it in
-        self._conn.execute('''
-            INSERT INTO embeddings VALUES (nextval('seq_id'), ?, ?, ?, ?, ?)''',
-                           [embedding_data, input_uri, dataset, custom_quality_score, category_name]
-                           )
+        self._conn.execute(
+            """
+            INSERT INTO embeddings VALUES (nextval('seq_id'), ?, ?, ?, ?, ?)""",
+            [embedding_data, input_uri, dataset, custom_quality_score, category_name],
+        )
 
     def count(self):
-        return self._conn.execute('''
+        return self._conn.execute(
+            """
             SELECT COUNT(*) FROM embeddings;
-        ''').fetchone()[0]
+        """
+        ).fetchone()[0]
 
     def update(self, data):  # call this update_custom_quality_score! that is all it does
         """
@@ -89,11 +110,13 @@ class DuckDB(Database):
         This is going to be fairly slow
         """
         for element in data:
-            if element['custom_quality_score'] is None:
+            if element["custom_quality_score"] is None:
                 continue
-            self._conn.execute(f'''
+            self._conn.execute(
+                f"""
                 UPDATE embeddings SET custom_quality_score={element['custom_quality_score']} WHERE id={element['id']}
-            ''')
+            """
+            )
 
     def fetch(self, where_filter={}, sort=None, limit=None):
         # check to see if query is dict and if it is a flat list of key value pairs
@@ -117,7 +140,9 @@ class DuckDB(Database):
         if limit is not None or isinstance(limit, int):
             where_filter += f" LIMIT {limit}"
 
-        return self._conn.execute(f'''
+        return (
+            self._conn.execute(
+                f"""
             SELECT
                 id,
                 embedding_data,
@@ -128,7 +153,11 @@ class DuckDB(Database):
             FROM
                 embeddings
         {where_filter}
-        ''').fetchdf().replace({np.nan: None})  # replace nan with None for json serialization
+        """
+            )
+            .fetchdf()
+            .replace({np.nan: None})
+        )  # replace nan with None for json serialization
 
     def delete_batch(self, batch):
         raise NotImplemented
@@ -140,12 +169,14 @@ class DuckDB(Database):
         if self._conn is None:
             return
 
-        self._conn.execute('''
+        self._conn.execute(
+            """
             COPY
                 (SELECT * FROM embeddings)
             TO '.mutant/mutant.parquet'
                 (FORMAT PARQUET);
-        ''')
+        """
+        )
 
     def load(self, path=".mutant/mutant.parquet"):
         """
@@ -161,7 +192,9 @@ class DuckDB(Database):
         if not ids:
             # create an empty pandas dataframe
             return pd.DataFrame()
-        return self._conn.execute(f'''
+        return (
+            self._conn.execute(
+                f"""
         SELECT
             id,
             embedding_data,
@@ -173,4 +206,8 @@ class DuckDB(Database):
             embeddings
         WHERE
             id IN ({','.join([str(x) for x in ids])})
-        ''').fetchdf().replace({np.nan: None})  # replace nan with None for json serializtion
+        """
+            )
+            .fetchdf()
+            .replace({np.nan: None})
+        )  # replace nan with None for json serializtion

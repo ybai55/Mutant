@@ -34,27 +34,28 @@ if os.path.exists(".mutant/index.bin"):
 
 # API Endpoints
 
+
 @app.get("/api/v1")
 async def root():
-    '''
+    """
     Heartbeat endpoint
-    '''
+    """
     return {"nanosecond heartbeat": int(1000 * time.time_ns())}
 
 
 @app.post("/api/v1/add", status_code=status.HTTP_201_CREATED)
 async def add_to_db(new_embedding: AddEmbedding):
-    '''
+    """
     Save embedding to database
     - supports single or batched embeddings
-    '''
+    """
 
     app._db.add_batch(
         new_embedding.embedding_data,
         new_embedding.input_uri,
         new_embedding.dataset,
         new_embedding.custom_quality_score,
-        new_embedding.category_name
+        new_embedding.category_name,
     )
 
     return {"response": "Added record to database"}
@@ -82,7 +83,7 @@ async def count():
     """
     Returns the number of records in the database
     """
-    return ({"count": app._db.count()})
+    return {"count": app._db.count()}
 
 
 @app.get("/api/v1/persist")
@@ -128,9 +129,9 @@ async def get_nearest_neighbors(embedding: QueryEmbedding):
 
     filter_by_where = {}
     if embedding.category_name is not None:
-        filter_by_where['category_name'] = embedding.category_name
+        filter_by_where["category_name"] = embedding.category_name
     if embedding.dataset is not None:
-        filter_by_where['dataset'] = embedding.dataset
+        filter_by_where["dataset"] = embedding.dataset
 
     if filter_by_where is not None:
         ids = app._db.fetch(filter_by_where)["id"].tolist()
@@ -139,5 +140,5 @@ async def get_nearest_neighbors(embedding: QueryEmbedding):
     return {
         "ids": nn[0].tolist()[0],
         "embeddings": app._db.get_by_ids(nn[0].tolist()[0]).to_dict(orient="records"),
-        "distances": nn[1].tolist()[0]
+        "distances": nn[1].tolist()[0],
     }
