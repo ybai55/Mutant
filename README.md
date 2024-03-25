@@ -7,6 +7,12 @@
 当然, 在复写Chroma上, 肯定存在各种问题. 目前是打算跟着Github的commit network来做. 正好也能感受一下Chroma
 在17个月的开发过程中的思考过程.
 
+
+## Not expected things
+Chroma use lots of third-party tools. Such as Sentry, PostHog and Clickhouse, which 
+I'm not familiar. I think it's not a first priority in this time. I'll follow the code, 
+but not verify things with those third-party things.
+
 This repository is a project that first following the Chroma's git network history, then think to imporve it.
 So may the first thousands commits will be the same as Chorma. The only diff is change the name.
 
