@@ -50,9 +50,7 @@ if __name__ == "__main__":
 
         # get the data
         embedding_data = batch['embedding_data'].tolist()
-        metadata = batch['metadata_list'].tolist()
         input_uri = batch['resource_uri'].tolist()
-        inference_data = batch['infer'].tolist()
 
         # get category name from batch["infer"]
         category_names = []
@@ -63,10 +61,8 @@ if __name__ == "__main__":
         # log the batch
         mutant.log_batch(
             embedding_data=embedding_data,
-            metadata=metadata,
             input_uri=input_uri,
-            inference_data=inference_data,
-            dataset=dataset,
+            dataset=[dataset*len(embedding_data)],
             category_name=category_names
         )
 

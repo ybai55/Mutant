@@ -51,11 +51,9 @@ async def add_to_db(new_embedding: AddEmbedding):
 
     app._db.add_batch(
         new_embedding.embedding_data,
-        new_embedding.metadata,
         new_embedding.input_uri,
-        new_embedding.inference_data,
         new_embedding.dataset,
-        new_embedding.distance,
+        new_embedding.custom_quality_score,
         new_embedding.category_name
     )
 
@@ -63,7 +61,7 @@ async def add_to_db(new_embedding: AddEmbedding):
 
 
 @app.get("/api/v1/process")
-async def process(metadata={}):
+async def process():
     """
     Currently generates an index for the embedding db
     """
@@ -71,12 +69,12 @@ async def process(metadata={}):
 
 
 @app.get("/api/v1/fetch")
-async def fetch(metadata={}, sort=None, limit=None):
+async def fetch(where_filter={}, sort=None, limit=None):
     """
     Fetches embeddings from the database
-    - enables filtering by metadata, sorting by key, and limiting the number of results
+    - enables filtering by where_filter, sorting by key, and limiting the number of results
     """
-    return app._db.fetch(metadata, sort, limit).to_dict(orient="records")
+    return app._db.fetch(where_filter, sort, limit).to_dict(orient="records")
 
 
 @app.get("/api/v1/count")
@@ -112,11 +110,11 @@ async def reset():
 
 
 @app.get("/api/v1/rand")
-async def rand(metadata={}, sort=None, limit=None):
+async def rand(where_filter={}, sort=None, limit=None):
     """
     Randomly bisection the database
     """
-    results = app._db.fetch(metadata, sort, limit)
+    results = app._db.fetch(where_filter, sort, limit)
     rand = rand_bisectional_subsample(results)
     return rand.to_dict(orient="records")
 
