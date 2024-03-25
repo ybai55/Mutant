@@ -8,7 +8,7 @@ from mutant_server.db.duckdb import DuckDB
 from mutant_server.index.hnswlib import Hnswlib
 from mutant_server.algorithms.rand_subsample import rand_bisectional_subsample
 from mutant_server.types import AddEmbedding, QueryEmbedding
-from mutant_server.utils import logger
+from mutant_server.logger import logger
 
 # Boot script
 db = DuckDB

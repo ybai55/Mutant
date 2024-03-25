@@ -1,7 +1,7 @@
 import hnswlib
 import numpy as np
 from mutant_server.index.abstract import Index
-from mutant_server.utils import logger
+from mutant_server.logger import logger
 
 
 class Hnswlib(Index):
