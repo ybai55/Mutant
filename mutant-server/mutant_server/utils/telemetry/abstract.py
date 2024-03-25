@@ -7,5 +7,5 @@ class Telemetry:
         pass
 
     @abstractmethod
-    def add_batch(self, batch):
+    def capture(self, batch):
         pass
