@@ -57,10 +57,10 @@ if __name__ == "__main__":
                 category_names.append(annotation['category_name'])
 
         # log the batch
-        mutant.log_batch(
+        mutant.log(
             embedding_data=embedding_data,
             input_uri=input_uri,
-            dataset=[dataset*len(embedding_data)],
+            dataset=dataset,
             category_name=category_names
         )
 
