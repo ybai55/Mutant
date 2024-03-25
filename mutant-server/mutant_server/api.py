@@ -15,10 +15,10 @@ from mutant_server.algorithms.rand_subsample import rand_bisectional_subsample
 from mutant_server.types import AddEmbedding, QueryEmbedding
 from mutant_server.logger import logger
 from mutant_server.utils.telemetry.capture import Capture
-from mutant_server.utils.config.settings import get_settings
-
 from mutant_server.utils.error_reporting import init_error_reporting
 
+mutant_telemetry = Capture()
+mutant_telemetry.capture("server-start")
 init_error_reporting()
 
 
