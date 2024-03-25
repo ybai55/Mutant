@@ -1,4 +1,3 @@
-from os import EX_CANTCREAT
 from mutant_server.db.abstract import Database
 import duckdb
 import numpy as np

@@ -13,4 +13,4 @@ COPY ./mutant_server /mutant-server/mutant_server
 
 EXPOSE 8000
 
-CMD ["uvicorn", "mutant_server:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
+CMD ["uvicorn", "mutant_server.api:app", "--host", "0.0.0.0", "--port", "8000", "--proxy-headers"]
