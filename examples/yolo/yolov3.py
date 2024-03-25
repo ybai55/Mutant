@@ -31,7 +31,8 @@ if __name__ == "__main__":
     layer = "pool5"
     dataset = "training"
     # Batch size
-    BATCH_SIZE = 100
+    BATCH_SIZE = 10_000
+    # BATCH_SIZE = 100
 
     print("Loading in records with a batch size of: ", data_length)
 
@@ -81,7 +82,17 @@ if __name__ == "__main__":
             category_name=category_names
         )
 
+    allend = time.time()
+    print("time to log all", "{:.2f}".format(allend - allstart))
+
+    fetched = mutant.count()
+    print("Records loaded into the database: ", fetched)
+
+    # time this function
+    start = time.time()
     mutant.process()
+    end = time.time()
+    print("Time to process: " + str(end - start))
 
     knife_embedding = [0.2310010939836502, -0.3462161719799042, 0.29164767265319824, -0.09828940033912659,
                        1.814868450164795, -10.517369270324707, -13.531850814819336, -12.730537414550781,
@@ -106,13 +117,17 @@ if __name__ == "__main__":
                        -14.4693603515625, -5.0566205978393555, -15.685358047485352, -12.493011474609375,
                        -8.424881935119629]
     # print("df['embedding_data'][0]: ", df['embedding_data'][0])
+    # time this function
+    start = time.time()
     get_nearest_neighbors = mutant.get_nearest_neighbors(knife_embedding, 4, "knife", "training")
     print("Nearest neighbors: ", len(get_nearest_neighbors['distances']), get_nearest_neighbors['ids'], get_nearest_neighbors)
+    end = time.time()
+    print("Time to get nearest neighbors: " + str(end - start))
 
-    highest_signal = mutant.rand()  # rand for now - by far the slowest operation
-    print("Record in a bisectional split: ", len(highest_signal))
+    # highest_signal = mutant.rand()  # rand for now - by far the slowest operation
+    # print("Record in a bisectional split: ", len(highest_signal))
 
-    # del mutant
     fetched = mutant.count()
     print("Records loaded into the database: ", fetched)
+    del mutant
 
