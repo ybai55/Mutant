@@ -10,7 +10,6 @@ from mutant_server.algorithms.rand_subsample import rand_bisectional_subsample
 from mutant_server.types import AddEmbedding, QueryEmbedding
 from mutant_server.utils import logger
 
-
 # Boot script
 db = DuckDB
 ann_index = Hnswlib
@@ -39,19 +38,22 @@ if os.path.exists(".mutant/index.bin"):
 
 
 # API Endpoints
+
 @app.get("/api/v1")
 async def root():
-    """
+    '''
     Heartbeat endpoint
-    """
+    '''
     return {"nanosecond heartbeat": int(1000 * time.time_ns())}
 
-@app.get("/api/v1/add", status_code=status.HTTP_201_CREATED)
+
+@app.post("/api/v1/add", status_code=status.HTTP_201_CREATED)
 async def add_to_db(new_embedding: AddEmbedding):
-    """
+    '''
     Save embedding to database
     - supports single or batched embeddings
-    """
+    '''
+
     app._db.add_batch(
         new_embedding.embedding_data,
         new_embedding.metadata,
@@ -95,9 +97,9 @@ async def count():
 
 @app.get("/api/v1/persist")
 async def persist():
-    '''
+    """
     Persist the database and index to disk
-    '''
+    """
     if not os.path.exists(".mutant"):
         os.mkdir(".mutant")
 
@@ -108,9 +110,9 @@ async def persist():
 
 @app.get("/api/v1/reset")
 async def reset():
-    '''
+    """
     Reset the database and index
-    '''
+    """
     shutil.rmtree(".mutant", ignore_errors=True)
     app._db = db()
     app._ann_index = ann_index()
@@ -119,9 +121,9 @@ async def reset():
 
 @app.get("/api/v1/rand")
 async def rand(metadata={}, sort=None, limit=None):
-    '''
+    """
     Randomly bisection the database
-    '''
+    """
     results = app._db.fetch(metadata, sort, limit)
     rand = rand_bisectional_subsample(results)
     return rand.to_dict(orient="records")
@@ -132,9 +134,9 @@ async def get_nearest_neighbors(embedding: QueryEmbedding):
     """
     return the distance and labels for the input embedding
     """
-    nn = app._ann_index.get_nerest_neighbors(embedding.embedding, embedding.n_results)
+    nn = app._ann_index.get_nearest_neighbors(embedding.embedding, embedding.n_results)
     return {
         "ids": nn[0].tolist()[0],
         "embeddings": app._db.get_by_ids(nn[0].tolist()[0]).to_dict(orient="records"),
-        "distance": nn[1].tolist()[0]
+        "distances": nn[1].tolist()[0]
     }
