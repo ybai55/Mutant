@@ -1,14 +1,26 @@
 import os
+from random import sample
 import shutil
 import time
+from typing import Callable
 
 from fastapi import FastAPI, Response, status
+from fastapi import Body, FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.routing import APIRoute
 
 from mutant_server.db.duckdb import DuckDB
 from mutant_server.index.hnswlib import Hnswlib
 from mutant_server.algorithms.rand_subsample import rand_bisectional_subsample
 from mutant_server.types import AddEmbedding, QueryEmbedding
 from mutant_server.logger import logger
+from mutant_server.utils.telemetry.capture import Capture
+from mutant_server.utils.config.settings import get_settings
+
+from mutant_server.utils.error_reporting import init_error_reporting
+
+init_error_reporting()
+
 
 # Boot script
 db = DuckDB
@@ -30,6 +42,9 @@ if os.path.exists(".mutant/mutant.parquet"):
 if os.path.exists(".mutant/index.bin"):
     logger.info("Loading existing mutant index")
     app._ann_index.load(app._db.count(), len(app._db.fetch(limit=1).embedding_data))
+
+mutant_telemetry = Capture()
+mutant_telemetry.capture("server-start")
 
 
 # API Endpoints
