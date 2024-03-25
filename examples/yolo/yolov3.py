@@ -5,6 +5,7 @@ from pandas.io.json import json_normalize
 import json
 import time
 import os
+import pandas as pd
 
 
 if __name__ == "__main__":
@@ -14,12 +15,9 @@ if __name__ == "__main__":
     print("Loading parquet file:", file)
     py = pq.read_table(file)
     df = py.to_pandas()
-    # print the length of the df
     print("Number of records:", len(df))
 
     data_length = len(df)
-    # print("Data preview")
-    # print(df.head())
 
     mutant = Mutant()
     mutant.reset()  # make sure we are using a fresh db
@@ -27,20 +25,16 @@ if __name__ == "__main__":
     start = time.time()
 
     dataset = "training"
-    # Batch size
     BATCH_SIZE = 10_000
-    # BATCH_SIZE = 100
 
-    print("Loading in records with a batch size of: ", data_length)
+    print(f"Loading in records with a batch size of: {data_length}")
 
-    # iterate through df with a batch size of 100
     for i in range(0, data_length, BATCH_SIZE):
-        if (i > 100):
+        if (i > 30_000):
             break
-
         end = time.time()
         page = i * BATCH_SIZE
-        print(f"Time to process {BATCH_SIZE} rows: {end - start}, records loaded: {str(i)}")
+        print("Time to process BATCH_SIZE rows: " + '{0:.2f}'.format((end - start)) + "s, records loaded: " + str(i))
         start = time.time()
 
         # get the batch
@@ -77,7 +71,7 @@ if __name__ == "__main__":
         )
 
     allend = time.time()
-    print("time to log all", "{:.2f}".format(allend - allstart))
+    print("time to log all", "{:.2f}".format(allend - allstart) + 's')
 
     fetched = mutant.count()
     print("Records loaded into the database: ", fetched)
@@ -86,7 +80,7 @@ if __name__ == "__main__":
     start = time.time()
     mutant.process()
     end = time.time()
-    print("Time to process: " + str(end - start))
+    print("Time to process: "  +'{0:.2f}'.format((end - start)) + 's')
 
     knife_embedding = [0.2310010939836502, -0.3462161719799042, 0.29164767265319824, -0.09828940033912659,
                        1.814868450164795, -10.517369270324707, -13.531850814819336, -12.730537414550781,
@@ -110,16 +104,15 @@ if __name__ == "__main__":
                        -9.694372177124023, -13.132003784179688, -9.38864803314209, -14.305071830749512,
                        -14.4693603515625, -5.0566205978393555, -15.685358047485352, -12.493011474609375,
                        -8.424881935119629]
-    # print("df['embedding_data'][0]: ", df['embedding_data'][0])
-    # time this function
     start = time.time()
     get_nearest_neighbors = mutant.get_nearest_neighbors(knife_embedding, 4, "knife", "training")
-    print("Nearest neighbors: ", len(get_nearest_neighbors['distances']), get_nearest_neighbors['ids'], get_nearest_neighbors)
-    end = time.time()
-    print("Time to get nearest neighbors: " + str(end - start))
+    res_df = pd.DataFrame(get_nearest_neighbors['embeddings'])
+    print(res_df.head())
 
-    # highest_signal = mutant.rand()  # rand for now - by far the slowest operation
-    # print("Record in a bisectional split: ", len(highest_signal))
+    print("Distances to nearest neighbors:", get_nearest_neighbors['distances'])
+    print("Internal ids of nearest neighbors:", get_nearest_neighbors['ids'])
+    end = time.time()
+    print("Time to get nearest neighbors: " +'{0:.2f}'.format((end - start)) + 's')
 
     fetched = mutant.count()
     print("Records loaded into the database: ", fetched)
