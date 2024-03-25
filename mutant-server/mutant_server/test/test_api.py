@@ -5,9 +5,11 @@ from httpx import AsyncClient
 from mutant_server.api import app
 
 
+base_url = "http://0.0.0.0:8000"
+
 @pytest.mark.anyio
 async def test_root():
-    async with AsyncClient(app=app, base_url='http://0.0.0.0:8000') as ac:
+    async with AsyncClient(app=app, base_url=base_url) as ac:
         response = await ac.get("/api/v1")
     assert response.status_code == 200
     assert (abs(response.json()["nanosecond heartbeat"] - int(1000 * time.time_ns()))
@@ -37,12 +39,13 @@ async def post_batch_records(ac):
         "model_version": ["1.0.0", "1.0.0"],
         "layer": ["pool5", "pool5"],
         "dataset": "training",
+        "category_name": "person"
     })
 
 
 @pytest.mark.anyio
 async def test_add_to_db():
-    async with AsyncClient(app=app, base_url='http://0.0.0.0:8000') as ac:
+    async with AsyncClient(app=app, base_url=base_url) as ac:
         response = await post_one_record(ac)
     assert response.status_code == 201
     assert response.json() == {"response": "Added record to database"}
@@ -50,7 +53,7 @@ async def test_add_to_db():
 
 @pytest.mark.anyio
 async def test_add_to_db_batch():
-    async with AsyncClient(app=app, base_url='http://0.0.0.0:8000') as ac:
+    async with AsyncClient(app=app, base_url=base_url) as ac:
         response = await post_batch_records(ac)
     assert response.status_code == 201
     assert response.json() == {"response": "Added record to database"}
@@ -58,7 +61,7 @@ async def test_add_to_db_batch():
 
 @pytest.mark.anyio
 async def test_fetch_from_db():
-    async with AsyncClient(app=app, base_url='http://0.0.0.0:8000') as ac:
+    async with AsyncClient(app=app, base_url=base_url) as ac:
         await post_one_record(ac)
         response = await ac.get("/api/v1/fetch", params={"limit": 1})
     assert response.status_code == 200
@@ -67,7 +70,7 @@ async def test_fetch_from_db():
 
 @pytest.mark.anyio
 async def test_count_from_db():
-    async with AsyncClient(app=app, base_url="http://0.0.0.0:8000") as ac:
+    async with AsyncClient(app=app, base_url=base_url) as ac:
         await ac.get("/api/v1/reset") # reset db
         await post_batch_records(ac)
         response = await ac.get("/api/v1/count")
@@ -77,7 +80,7 @@ async def test_count_from_db():
 
 @pytest.mark.anyio
 async def test_reset_db():
-    async with AsyncClient(app=app, base_url="http://0.0.0.0:8000") as ac:
+    async with AsyncClient(app=app, base_url=base_url) as ac:
         await ac.get("/api/v1/reset")
         await post_batch_records(ac)
         response = await ac.get("/api/v1/count")
@@ -90,11 +93,33 @@ async def test_reset_db():
 
 @pytest.mark.anyio
 async def test_get_nearest_neighbors():
-    async with AsyncClient(app=app, base_url="http://0.0.0.0:8000") as ac:
+    async with AsyncClient(app=app, base_url=base_url) as ac:
         await ac.get("/api/v1/reset")
         await post_batch_records(ac)
         await ac.get("/api/v1/process")
-        response = await ac.post("/api/v1/get_nearest_neighbors", json={"embedding":[1.1, 2.3, 3.2], "n_results": 1})
+        response = await ac.post("/api/v1/get_nearest_neighbors", json={"embedding": [1.1, 2.3, 3.2], "n_results": 1})
         print(response.status_code)
     assert response.status_code == 200
     assert len(response.json()["ids"]) == 1
+
+
+@pytest.mark.anyio
+async def test_get_nearest_neighbors_filter():
+    async with AsyncClient(app=app, base_url=base_url) as ac:
+        await ac.get("/api/v1/reset")
+        await post_batch_records(ac)
+        await ac.get("/api/v1/process")
+        response = await ac.post("/api/v1/get_nearest_neighbors", json={"embedding": [1.1, 2.3, 3.2], "n_results": 1, "dataset": "training", "category_name": "monkey"})
+    assert response.status_code == 200
+    assert len(response.json()["ids"]) == 0
+
+
+@pytest.mark.anyio
+async def test_get_nearest_neighbors_filter():
+    async with AsyncClient(app=app, base_url=base_url) as ac:
+        await ac.get("/api/v1/reset")
+        await post_batch_records(ac)
+        await ac.get("/api/v1/process")
+        response = await ac.post("/api/v1/get_nearest_neighbors", json={"embedding": [1.1, 2.3, 3.2], "n_results": 2, "dataset": "training", "category_name": "person"})
+    assert response.status_code == 200
+    assert len(response.json()["ids"]) == 2
