@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 python:3.11
+FROM --platform=linux/amd64 python:3.10
 
 #RUN apt-get update -qq
 #RUN apt-get install python3.11 python3-pip -y --no-install-recommends && rm -rf /var/lib/apt/lists_/*
