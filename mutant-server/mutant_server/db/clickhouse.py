@@ -1,5 +1,6 @@
 from mutant_server.db.abstract import Database
 import uuid
+import time
 
 from clickhouse_driver import connect, Client
 
@@ -47,6 +48,7 @@ class Clickhouse(Database):
         pass
 
     def fetch(self, where_filter={}, sort=None, limit=None):
+        s3 = time.time()
         # check to see if query is a dict and if it is a flat list of key value pairs
         if where_filter is not None:
             if not isinstance(where_filter, dict):
@@ -70,7 +72,7 @@ class Clickhouse(Database):
 
         # print('fetch_results', fetch_results)
 
-        return self._conn.execute(
+        val =  self._conn.execute(
             f"""
             SELECT 
                 uuid,
@@ -84,6 +86,8 @@ class Clickhouse(Database):
         {where_filter}    
         """
         )
+        print(f"time to fetch {len(val)} embeddings: ", time.time() - s3)
+        return val
 
     def delete_batch(self, batch):
         pass

@@ -1,4 +1,5 @@
 import hnswlib
+import time
 import numpy as np
 from mutant_server.index.abstract import Index
 from mutant_server.logger import logger
@@ -7,6 +8,12 @@ from mutant_server.logger import logger
 class Hnswlib(Index):
 
     _index = None
+
+    # these data structures enable us to map between uuids and ids
+    # - our uuids are strings (clickhouse doesnt do autoincrementing ids for performance)
+    # - but hnswlib uses integers only as ids
+    # - so this is a temporary bandaid.
+    # TODO: this should get written to disk somehow or we the index will be come useless after a restart
     _id_to_uuid = {}
     __uuid_to_id = {}
 
@@ -16,6 +23,7 @@ class Hnswlib(Index):
     def run(self, embedding_data):
         # more comments available at the source: https://github.com/nmslib/hnswlib
 
+        s1 = time.time()
         uuids = []
         embeddings = []
         ids = []
@@ -27,6 +35,7 @@ class Hnswlib(Index):
             self._id_to_uuid[i] = str(embedding[0])
             self.__uuid_to_id[str(embedding[0])] = i
             i += 1
+        print('time to create uuids and embeddings:' , time.time() - s1)
 
         # We split the data in two batches:
         data1 = embeddings  # embedding_data['embedding_data'].to_numpy().tolist()
@@ -48,16 +57,18 @@ class Hnswlib(Index):
 
         # logger.debug("Adding first batch of %d elements..." % (len(data1)))
         # p.add_items(data1, embedding_data["id"])
+        s2 = time.time()
         p.add(data1, ids)
+        print('time to add the items: ', time.time() - s2)
         # Query the elements for themselves and measure recall:
-        database_ids, distances = p.knn_query(data1, k=1)
+        # database_ids, distances = p.knn_query(data1, k=1)
         # logger.debug("database_ids", database_ids)
         # logger.debug("distances", distances)
         # logger.debug("len(distances))
-        logger.debug(
-            "Recall for the first batch:"
-            + str(np.mean(database_ids.reshape(-1) == np.arange(len(data1))))
-        )
+        # logger.debug(
+        #     "Recall for the first batch:"
+        #     + str(np.mean(database_ids.reshape(-1) == np.arange(len(data1))))
+        # )
 
         self._index = p
 
@@ -80,6 +91,7 @@ class Hnswlib(Index):
 
     # do knn_query on hnswlib to get nearest neighbors
     def get_nearest_neighbors(self, query, k, uuids=None):
+        s2 = time.time()
         # get ids from uuids
         ids = []
         for uuid in uuids:
@@ -91,8 +103,11 @@ class Hnswlib(Index):
 
         if len(ids) < k:
             k = len(ids)
+        print('time to pre process our knn query: ', time.time() - s2)
 
+        s3 = time.time()
         database_ids, distances = self._index.knn_query(query, k=k, filter=filter_function)
+        print('time to run knn query: ', time.time() - s3)
         # get uuids from ids
         uuids = []
         for id in database_ids[0]:
