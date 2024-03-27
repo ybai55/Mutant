@@ -7,6 +7,8 @@ from mutant_server.logger import logger
 class Hnswlib(Index):
 
     _index = None
+    _id_to_uuid = {}
+    __uuid_to_id = {}
 
     def __init__(self):
         pass
@@ -14,8 +16,20 @@ class Hnswlib(Index):
     def run(self, embedding_data):
         # more comments available at the source: https://github.com/nmslib/hnswlib
 
+        uuids = []
+        embeddings = []
+        ids = []
+        i = 0
+        for embedding in embedding_data:
+            uuids.append(str(embedding[0]))
+            embeddings.append(embedding[1])
+            ids.append(i)
+            self._id_to_uuid[i] = str(embedding[0])
+            self.__uuid_to_id[str(embedding[0])] = i
+            i += 1
+
         # We split the data in two batches:
-        data1 = embedding_data["embedding_data"].to_numpy().tolist()
+        data1 = embeddings  # embedding_data['embedding_data'].to_numpy().tolist()
         dim = len(data1[0])
         num_elements = len(data1)
         # logger.debug("dimensionality is: ", dim)
@@ -33,8 +47,8 @@ class Hnswlib(Index):
         p.set_num_threads(4)  # Set number of threads used during batch search/construction
 
         # logger.debug("Adding first batch of %d elements..." % (len(data1)))
-        p.add_items(data1, embedding_data["id"])
-
+        # p.add_items(data1, embedding_data["id"])
+        p.add(data1, ids)
         # Query the elements for themselves and measure recall:
         database_ids, distances = p.knn_query(data1, k=1)
         # logger.debug("database_ids", database_ids)
@@ -65,7 +79,12 @@ class Hnswlib(Index):
         self._index.load_index(".mutant/index.bin", max_elements=elements)
 
     # do knn_query on hnswlib to get nearest neighbors
-    def get_nearest_neighbors(self, query, k, ids=None):
+    def get_nearest_neighbors(self, query, k, uuids=None):
+        # get ids from uuids
+        ids = []
+        for uuid in uuids:
+            ids.append(self.__uuid_to_id[uuid])
+
         filter_function = None
         if not ids is None:
             filter_function = lambda id: id in ids
@@ -74,4 +93,8 @@ class Hnswlib(Index):
             k = len(ids)
 
         database_ids, distances = self._index.knn_query(query, k=k, filter=filter_function)
-        return database_ids, distances
+        # get uuids from ids
+        uuids = []
+        for id in database_ids[0]:
+            uuids.append(self._id_to_uuid[id])
+        return uuids, distances

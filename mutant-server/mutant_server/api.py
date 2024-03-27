@@ -9,7 +9,7 @@ from fastapi import Body, FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.routing import APIRoute
 
-from mutant_server.db.duckdb import DuckDB
+from mutant_server.db.clickhouse import Clickhouse
 from mutant_server.index.hnswlib import Hnswlib
 from mutant_server.algorithms.rand_subsample import rand_bisectional_subsample
 from mutant_server.types import AddEmbedding, QueryEmbedding
@@ -23,13 +23,14 @@ init_error_reporting()
 
 
 # Boot script
-db = DuckDB
+db = Clickhouse
 ann_index = Hnswlib
 
 app = FastAPI(debug=True)
 
 # init db and index
 app._db = db()
+app._db.reset()
 app._ann_index = ann_index()
 
 if not os.path.exists(".mutant"):
@@ -125,14 +126,14 @@ async def reset():
     return True
 
 
-@app.get("/api/v1/rand")
-async def rand(where_filter={}, sort=None, limit=None):
-    """
-    Randomly bisection the database
-    """
-    results = app._db.fetch(where_filter, sort, limit)
-    rand = rand_bisectional_subsample(results)
-    return rand.to_dict(orient="records")
+# @app.get("/api/v1/rand")
+# async def rand(where_filter={}, sort=None, limit=None):
+#     """
+#     Randomly bisection the database
+#     """
+#     results = app._db.fetch(where_filter, sort, limit)
+#     rand = rand_bisectional_subsample(results)
+#     return rand.to_dict(orient="records")
 
 
 @app.post("/api/v1/get_nearest_neighbors")
@@ -149,11 +150,18 @@ async def get_nearest_neighbors(embedding: QueryEmbedding):
         filter_by_where["dataset"] = embedding.dataset
 
     if filter_by_where is not None:
-        ids = app._db.fetch(filter_by_where)["id"].tolist()
+        print("app._db.fetch(filter_by_where)[uuid]")
+        results = app._db.fetch(filter_by_where)
+        # get the first element of each item in results
+        ids =[str(item[0] for item in results)]
+        # ids = app._db.fetch(filter_by_where)["uuid"].tolist()
 
-    nn = app._ann_index.get_nearest_neighbors(embedding.embedding, embedding.n_results, ids)
+    # nn = app._ann_index.get_nearest_neighbors(embedding.embedding, embedding.n_results, ids)
+    uuids, distances = app._ann_index.get_nearest_neighbors(embedding.embedding, embedding.n_results, ids)
+    print("uuids", uuids)
+    print("distances", distances.tolist()[0])
     return {
-        "ids": nn[0].tolist()[0],
-        "embeddings": app._db.get_by_ids(nn[0].tolist()[0]).to_dict(orient="records"),
-        "distances": nn[1].tolist()[0],
+        "ids": uuids,
+        "embeddings": app._db.get_by_ids(uuids), #.to_dict(orient="records)
+        "distances": distances.tolist()[0],
     }
