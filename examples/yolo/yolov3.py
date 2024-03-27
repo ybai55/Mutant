@@ -103,7 +103,7 @@ if __name__ == "__main__":
                        -14.4693603515625, -5.0566205978393555, -15.685358047485352, -12.493011474609375,
                        -8.424881935119629]
     start = time.time()
-    get_nearest_neighbors = mutant.get_nearest_neighbors(knife_embedding, 4, None, "training")
+    get_nearest_neighbors = mutant.get_nearest_neighbors(knife_embedding, 4, "knife", "training")
     res_df = pd.DataFrame(get_nearest_neighbors['embeddings'])
     print(res_df.head())
 
@@ -114,5 +114,5 @@ if __name__ == "__main__":
 
     fetched = mutant.count()
     print("Records loaded into the database: ", fetched)
-    # del mutant
+    del mutant
 

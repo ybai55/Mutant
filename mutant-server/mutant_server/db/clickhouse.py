@@ -3,35 +3,45 @@ import uuid
 
 from clickhouse_driver import connect, Client
 
+
 class Clickhouse(Database):
     _conn = None
 
     def _create_table_embeddings(self):
-        self._conn.execute('''CREATE TABLE IF NOT EXISTS embeddings (
+        self._conn.execute(
+            """CREATE TABLE IF NOT EXISTS embeddings (
             uuid UUID, 
             embedding_data Array(Float64),
             input_uri String,
             dataset String,
             custom_quality_score Nullable(Float64),
             category_name String,    
-        ) ENGINE = Memory''')
+        ) ENGINE = Memory"""
+        )
 
     def __init__(self):
         # https://stackoverflow.com/questions/59224272/connect-cannot-assign-requested-address
-        client = Client('clickhouse')
+        client = Client("clickhouse")
         self._conn = client
         self._create_table_embeddings()
 
-    def add_batch(self, embedding_data, input_uri, dataset=None, custom_quality_score=None, category_name=None):
+    def add_batch(
+        self, embedding_data, input_uri, dataset=None, custom_quality_score=None, category_name=None
+    ):
         data_to_insert = []
         for i in range(len(embedding_data)):
-            data_to_insert.append([uuid.uuid4(), embedding_data[i], input_uri[i], dataset[i], category_name[i]])
+            data_to_insert.append(
+                [uuid.uuid4(), embedding_data[i], input_uri[i], dataset[i], category_name[i]]
+            )
 
-        self._conn.execute('''
-        INSERT INTO embeddings (uuid, embedding_data, input_uri, dataset, category_name) VALUES ''', data_to_insert)
+        self._conn.execute(
+            """
+        INSERT INTO embeddings (uuid, embedding_data, input_uri, dataset, category_name) VALUES """,
+            data_to_insert,
+        )
 
     def count(self):
-        return self._conn.execute('SELECT COUNT(*) FROM embeddings')
+        return self._conn.execute("SELECT COUNT(*) FROM embeddings")
 
     def update(self, data):  # call this update_custom_quality_score! that is all it does
         pass
@@ -47,7 +57,7 @@ class Clickhouse(Database):
                 if isinstance(where_filter[key], dict):
                     raise Exception("Invalid where_filter: " + str(where_filter))
 
-        where_filter = 'AND'.join([f"{key} = '{value}'" for key, value in where_filter.items()])
+        where_filter = "AND".join([f"{key} = '{value}'" for key, value in where_filter.items()])
 
         if where_filter:
             where_filter = f"WHERE {where_filter}"
@@ -58,7 +68,10 @@ class Clickhouse(Database):
         if limit is not None or isinstance(limit, int):
             where_filter += f" LIMIT {limit}"
 
-        fetch_results = self._conn.execute(f'''
+        # print('fetch_results', fetch_results)
+
+        return self._conn.execute(
+            f"""
             SELECT 
                 uuid,
                 embedding_data,
@@ -69,11 +82,8 @@ class Clickhouse(Database):
             FROM
                 embeddings
         {where_filter}    
-        ''')
-
-        # print('fetch_results', fetch_results)
-
-        return fetch_results
+        """
+        )
 
     def delete_batch(self, batch):
         pass
@@ -87,7 +97,8 @@ class Clickhouse(Database):
     def get_by_ids(self, ids=list):
         # ids = "'" + "','".join([str(x) for x in ids]) + "'"
         # print("id list", ids)
-        return self._conn.execute(f'''
+        return self._conn.execute(
+            f"""
             SELECT
                 uuid,
                 embedding_data,
@@ -99,7 +110,8 @@ class Clickhouse(Database):
                 embeddings
             WHERE
                 uuid IN ({ids})
-        ''')
+        """
+        )
 
     def reset(self):
         self._conn.execute("DROP TABLE IF EXISTS embeddings")
