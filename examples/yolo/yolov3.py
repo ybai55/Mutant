@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     data_length = len(df)
 
-    mutant = Mutant()
+    mutant = Mutant(app="yolov3", model_version="1", layer="1")
     mutant.reset()  # make sure we are using a fresh db
     allstart = time.time()
     start = time.time()

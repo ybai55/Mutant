@@ -11,6 +11,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./mutant-server/:/mutant-server/
+      - index_data:/index_data
     command: uvicorn mutant_server:app --reload --workers 1 --host 0.0.0.0 --port 8000
     # env_file:
     #   - ./mutant-server/.env
@@ -35,4 +36,6 @@ services:
 
 volumes:
   clickhouse_data:
+    driver: local
+  index_data:
     driver: local
