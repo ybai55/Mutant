@@ -72,7 +72,7 @@ class Mutant:
         self,
         embedding_data: list,
         input_uri: list,
-        dataset: str = None,
+        dataset: list = None,
         category_name: list = None,
     ):
         """
@@ -105,7 +105,7 @@ class Mutant:
         return self.log(
             embedding_data=embedding_data,
             input_uri=input_uri,
-            dataset="training",
+            dataset=["training"]*len(embedding_data),
             category_name=category_name,
         )
 
@@ -117,7 +117,7 @@ class Mutant:
         return self.log(
             embedding_data=embedding_data,
             input_uri=input_uri,
-            dataset="production",
+            dataset=["production"]*len(embedding_data),
             category_name=category_name,
         )
 
@@ -126,10 +126,10 @@ class Mutant:
         Small wrapper around log() to log a batch of triage embedding
         - sets dataset to "triage"
         """
-        return self.log_batch(
+        return self.log(
             embedding_data=embedding_data,
             input_uri=input_uri,
-            dataset="triage",
+            dataset=["triage"]*len(embedding_data),
             category_name=category_name,
         )
 
