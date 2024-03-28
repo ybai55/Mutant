@@ -1,6 +1,7 @@
 import hnswlib
 import pickle
 import time
+import os
 import numpy as np
 from mutant_server.index.abstract import Index
 from mutant_server.logger import logger
@@ -12,9 +13,9 @@ class Hnswlib(Index):
     _space_key = None
     _index = None
     _index_metadata = {
-        'dimensionality': None,
-        'elements': None,
-        'time_created': None,
+        "dimensionality": None,
+        "elements": None,
+        "time_created": None,
     }
 
     # these data structures enable us to map between uuids and ids
@@ -27,22 +28,19 @@ class Hnswlib(Index):
     def __init__(self):
         pass
 
-    def run(self, space_key, embedding_data):
+    def run(self, space_key, uuids, embedding_data):
         # more comments available at the source: https://github.com/nmslib/hnswlib
 
         self._space_key = space_key
 
         s1 = time.time()
-        uuids = []
-        embeddings = []
+        embeddings = embedding_data
         ids = []
         i = 0
-        for embedding in embedding_data:
-            uuids.append(str(embedding[1]))
-            embeddings.append(embedding[2])
+        for uuid in uuids:
             ids.append(i)
-            self._id_to_uuid[i] = str(embedding[1])
-            self._uuid_to_id[str(embedding[1])] = i
+            self._id_to_uuid[i] = str(uuid)
+            self._uuid_to_id[str(uuid)] = i
             i += 1
 
         data1 = embeddings  # embedding_data['embedding_data'].to_numpy().tolist()
@@ -50,10 +48,6 @@ class Hnswlib(Index):
         num_elements = len(data1)
         # logger.debug("dimensionality is: ", dim)
         # logger.debug("total number of elements: ", num_elements)
-        # logger.debug("max elements", num_elements//2)
-
-        concatted_data = data1
-        # logger.debug("concatenated length: ", len(concatted_data))
 
         p = hnswlib.Index(
             space="l2", dim=dim
@@ -80,9 +74,9 @@ class Hnswlib(Index):
         self._index = p
 
         self._index_metadata = {
-            'dimensionality': dim,
-            'elements': num_elements,
-            'time_created': time.time(),
+            "dimensionality": dim,
+            "elements": num_elements,
+            "time_created": time.time(),
         }
 
         self.save()
@@ -108,12 +102,14 @@ class Hnswlib(Index):
             self._id_to_uuid = pickle.load(f)
         with open(f"/index_data/uuid_to_id_{space_key}.pkl", "rb") as f:
             self._uuid_to_id = pickle.load(f)
-        with open(f"/index_data/index_metadata_{space_key}.pkl", 'rb') as f:
+        with open(f"/index_data/index_metadata_{space_key}.pkl", "rb") as f:
             self._index_metadata = pickle.load(f)
 
-        p = hnswlib.Index(space='12', dim=self._index_metadata['dimensionality'])
+        p = hnswlib.Index(space="12", dim=self._index_metadata["dimensionality"])
         self._index = p
-        self._index.load_index(f"/index_data/index_{space_key}.bin", max_elements=self._index_metadata['elements'])
+        self._index.load_index(
+            f"/index_data/index_{space_key}.bin", max_elements=self._index_metadata["elements"]
+        )
 
         self._space_key = space_key
 
@@ -144,3 +140,7 @@ class Hnswlib(Index):
         for id in database_ids[0]:
             uuids.append(self._id_to_uuid[id])
         return uuids, distances
+
+    def reset(self):
+        for f in os.listdir("/index_data"):
+            os.remove(os.path.join("/index_data", f))
