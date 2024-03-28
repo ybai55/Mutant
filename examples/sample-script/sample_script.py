@@ -1,8 +1,9 @@
 import pandas as pd
 from mutant_client import Mutant
 
-client1 = Mutant()
-client1.reset()
+mutant = Mutant()
+
+mutant.set_context("test", "1", "2")
 
 # knife_embedding = [0.2310010939836502, -0.3462161719799042, 0.29164767265319824, -0.09828940033912659,
 #                    1.814868450164795, -10.517369270324707, -13.531850814819336, -12.730537414550781,
@@ -30,27 +31,14 @@ client1.reset()
 # res_df = pd.DataFrame(get_nearest_neighbors['embeddings'])
 # print(res_df.head())
 
-client1.set_context(app='yolov3', model_version='5', layer='1')
-client1.log([[1,2,3,4,5]], ["/images/1"], ["training"], ['spoon'])
-client1.log([[1,2,3,4,5]], ["/images/2"], ["training"], ['spoon'])
-client1.log([[1,2,3,4,5]], ["/images/3"], ["training"], ['spoon'])
-client1.log([[1,2,3,4,5]], ["/images/4"], ["training"], ['spoon'])
-client1.log([[1,2,3,4,5]], ["/prod/1"], ["test"], ['spoon'])
-client1.log([[1,2,3,4,5]], ["/prod/2"], ["test"], ['spoon'])
-print("context", client1.get_context())
-print("context", client1.heartbeat())
-print("layer 1", client1.count(client1.get_context()))
-# print("fetch", client1.fetch())
-print(client1.process())
-print(client1.get_nearest_neighbors([1,2,3,4,5], 2))
+mutant.log([[1, 2, 3, 4, 5]], ["/images/1"], ["training"], ['spoon'])
+mutant.log([[1, 2, 3, 4, 5]], ["/images/2"], ["training"], ['spoon'])
+mutant.log([[1, 2, 3, 4, 5]], ["/images/3"], ["training"], ['spoon'])
 
-client1.set_context("test", "1", "2")
-client1.log([[1,2,3,4,5]], ["/images/1"], ["training"], ['knife'])
-client1.log([[1,2,3,4,5]], ["/images/4"], ["training"], ['knife'])
-client1.log([[1,2,3,4,5]], ["/prod/2"], ["test"], ['knife'])
-print("context", client1.get_context())
-print("context", client1.heartbeat())
-print("layer 1", client1.count(client1.get_context()))
-# print("fetch", client1.fetch())
-print(client1.process())
-print(client1.get_nearest_neighbors([1,2,3,4,5], 2))
+mutant.set_context("test", "1", "55")
+mutant.log([[1, 2, 3, 4, 5]], ["/images/1"], ["training"], ['knife'])
+mutant.log([[1, 2, 3, 4, 5]], ["/images/4"], ["training"], ['knife'])
+mutant.log([[1, 2, 3, 4, 5]], ["/prod/2"], ["test"], ['knife'])
+
+print(mutant.raw_sql('SELECT DISTINCT space_key FROM embeddings;'))
+print("layer 1", mutant.count(mutant.get_context()))

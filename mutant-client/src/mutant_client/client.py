@@ -185,3 +185,10 @@ class Mutant:
             return x.json()
         else:
             return False
+
+    def raw_sql(self, sql):
+        """
+        Runs a raw SQL query against the database
+        """
+        x = requests.get(self._api_url + "/raw_sql", data=json.dumps({"raw_sql": sql}))
+        return x.json()

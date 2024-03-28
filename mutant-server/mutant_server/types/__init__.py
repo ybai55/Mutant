@@ -32,3 +32,7 @@ class FetchEmbedding(BaseModel):
 
 class CountEmbedding(BaseModel):
     space_key: str = None
+
+
+class RawSql(BaseModel):
+    raw_sql: str = None
