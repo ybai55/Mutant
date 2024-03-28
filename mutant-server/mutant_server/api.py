@@ -56,7 +56,7 @@ async def add_to_db(new_embedding: AddEmbedding):
     Save embedding to database
     - supports single or batched embeddings
     """
-    print("add_to_db, new_embedding.space_key", new_embedding, new_embedding.space_key)
+    # print("add_to_db, new_embedding.space_key", new_embedding, new_embedding.space_key)
 
     app._db.add_batch(
         new_embedding.space_key,
@@ -76,7 +76,7 @@ async def process(process_embedding: ProcessEmbedding):
     Currently generates an index for the embedding db
     """
     where_filter = {"space_key": process_embedding.space_key}
-    print("process, where_filter", where_filter)
+    # print("process, where_filter", where_filter)
     app._ann_index.run(process_embedding.space_key, app._db.fetch(where_filter))
 
 

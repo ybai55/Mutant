@@ -89,8 +89,7 @@ class Clickhouse(Database):
         if limit is not None or isinstance(limit, int):
             where_filter += f" LIMIT {limit}"
 
-        # print('fetch_results', fetch_results)
-        print("where_filter", where_filter)
+        # print("where_filter", where_filter)
 
         val = self._conn.execute(
             f"""
