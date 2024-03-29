@@ -3,6 +3,8 @@ from mutant_client import Mutant
 
 mutant = Mutant()
 
+print(mutant.heartbeat())
+
 mutant.set_context("test", "1", "2")
 
 # knife_embedding = [0.2310010939836502, -0.3462161719799042, 0.29164767265319824, -0.09828940033912659,

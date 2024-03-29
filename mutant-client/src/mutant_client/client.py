@@ -35,12 +35,17 @@ class Mutant:
         """
         return self._space_key
 
+    def heartbeat(self):
+        """
+        Returns the current server time in milliseconds to check if the server is alive
+        """
+        return requests.get(self._api_url).json()
+
     def count(self, space_key=None):
         """
         Return the number of embeddings in the database
         """
-        payload = json.dumps({"space_key": space_key or self._space_key})
-        x = requests.get(self._api_url + "/count", data=payload)
+        x = requests.get(self._api_url + "/count", data=json.dumps({"space_key": space_key or self._space_key}))
         return x.json()
 
     def fetch(self, where_filter={}, sort=None, limit=None):
@@ -48,34 +53,10 @@ class Mutant:
         Fetches embeddings from the database
         """
         where_filter["space_key"] = self._space_key
-        x = requests.get(
+        return requests.get(
             self._api_url + "/fetch",
             data=json.dumps({"where_filter": where_filter, "sort": sort, "limit": limit}),
-        )
-        return x.json()
-
-    def process(self, space_key=None):
-        """
-        Processes embeddings in the database
-        - currently this only runs hnswlib, doesn't return anything
-        """
-        requests.get(
-            self._api_url + "/process", data=json.dumps({"space_key": space_key or self._space_key})
-        )
-        return True
-
-    def reset(self):
-        """
-        Resets the database
-        """
-        return requests.get(self._api_url + "/reset")
-
-    def heartbeat(self):
-        """
-        Returns the current server time in milliseconds to check if the server is alive
-        """
-        x = requests.get(self._api_url)
-        return x.json()
+        ).json()
 
     def log(
         self,
@@ -186,9 +167,24 @@ class Mutant:
         else:
             return False
 
+    def process(self, space_key=None):
+        """
+        Processes embeddings in the database
+        - currently this only runs hnswlib, doesn't return anything
+        """
+        requests.get(
+            self._api_url + "/process", data=json.dumps({"space_key": space_key or self._space_key})
+        )
+        return True
+
+    def reset(self):
+        """
+        Resets the database
+        """
+        return requests.get(self._api_url + "/reset")
+
     def raw_sql(self, sql):
         """
         Runs a raw SQL query against the database
         """
-        x = requests.get(self._api_url + "/raw_sql", data=json.dumps({"raw_sql": sql}))
-        return x.json()
+        return requests.get(self._api_url + "/raw_sql", data=json.dumps({"raw_sql": sql})).json()

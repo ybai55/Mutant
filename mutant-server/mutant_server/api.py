@@ -11,7 +11,14 @@ from fastapi.routing import APIRoute
 
 from mutant_server.db.clickhouse import Clickhouse
 from mutant_server.index.hnswlib import Hnswlib
-from mutant_server.types import AddEmbedding, QueryEmbedding, ProcessEmbedding, FetchEmbedding, CountEmbedding, RawSql
+from mutant_server.types import (
+    AddEmbedding,
+    QueryEmbedding,
+    ProcessEmbedding,
+    FetchEmbedding,
+    CountEmbedding,
+    RawSql,
+)
 from mutant_server.logger import logger
 
 # Boot script
@@ -136,6 +143,7 @@ async def get_nearest_neighbors(embedding: QueryEmbedding):
         "embeddings": app._db.get_by_ids(uuids),
         "distances": distances.tolist()[0],
     }
+
 
 @app.get("/api/v1/raw_sql")
 async def raw_sql(raw_sql: RawSql):

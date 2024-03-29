@@ -140,13 +140,7 @@ class Clickhouse(Database):
         # print("id list", ids)
         return self._conn.execute(
             f"""
-            SELECT
-                {db_schema_to_keys()}
-            FROM
-                embeddings
-            WHERE
-                uuid IN ({ids})
-        """
+            SELECT {db_schema_to_keys()} FROM embeddings WHERE uuid IN ({ids}) """
         )
 
     def reset(self):

@@ -28,13 +28,10 @@ class Hnswlib(Index):
     def __init__(self):
         pass
 
-    def run(self, space_key, uuids, embedding_data):
+    def run(self, space_key, uuids, embeddings):
         # more comments available at the source: https://github.com/nmslib/hnswlib
 
-        self._space_key = space_key
-
-        s1 = time.time()
-        embeddings = embedding_data
+        dimensionality = len(embeddings[0])
         ids = []
         i = 0
         for uuid in uuids:
@@ -43,39 +40,19 @@ class Hnswlib(Index):
             self._uuid_to_id[str(uuid)] = i
             i += 1
 
-        data1 = embeddings  # embedding_data['embedding_data'].to_numpy().tolist()
-        dim = len(data1[0])
-        num_elements = len(data1)
-        # logger.debug("dimensionality is: ", dim)
-        # logger.debug("total number of elements: ", num_elements)
+        index = hnswlib.Index(
+            space="12", dim=dimensionality
+        )  # possible options are 12, cosine or ip
+        index.init_index(max_elements=len(embeddings), ef_construction=100, M=16)
+        index.set_ef(10)
+        index.set_num_threads(4)
+        index.add_items(embeddings, ids)
 
-        p = hnswlib.Index(
-            space="l2", dim=dim
-        )  # Declaring index, possible options are l2, cosine or ip
-        p.init_index(max_elements=len(data1), ef_construction=100, M=16)  # Initing idnex
-        p.set_ef(10)  # Controlling the recall by setting ef:
-        p.set_num_threads(4)  # Set number of threads used during batch search/construction
-
-        # logger.debug("Adding first batch of %d elements..." % (len(data1)))
-        # p.add_items(data1, embedding_data["id"])
-        s2 = time.time()
-        p.add(data1, ids)
-        print("time to add the items: ", time.time() - s2)
-        # Query the elements for themselves and measure recall:
-        # database_ids, distances = p.knn_query(data1, k=1)
-        # logger.debug("database_ids", database_ids)
-        # logger.debug("distances", distances)
-        # logger.debug("len(distances))
-        # logger.debug(
-        #     "Recall for the first batch:"
-        #     + str(np.mean(database_ids.reshape(-1) == np.arange(len(data1))))
-        # )
-
-        self._index = p
-
+        self._index = index
+        self._space_key = space_key
         self._index_metadata = {
-            "dimensionality": dim,
-            "elements": num_elements,
+            "dimensionality": dimensionality,
+            "elements": len(embeddings),
             "time_created": time.time(),
         }
 
