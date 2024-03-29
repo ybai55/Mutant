@@ -2,7 +2,7 @@ import os
 import shutil
 import time
 
-from fastapi import FastAPI, Response, status
+from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 
 from worker import heavy_offline_analysis
@@ -17,6 +17,7 @@ from mutant_server.types import (
     CountEmbedding,
     RawSql,
     Results,
+    SpaceKeyInput
 )
 from celery.result import AsyncResult
 
@@ -49,10 +50,11 @@ async def root():
     return {"nanosecond heartbeat": int(1000 * time.time_ns())}
 
 
-@app.get("/api/v1/trigger_heavy_celery_task")
-async def heavy_offline_analysis_api(space_key: str):
+@app.get("/api/v1/calculate_results")
+async def calculate_results(space_key: SpaceKeyInput):
     task = heavy_offline_analysis(space_key)
     return JSONResponse({"task_id": task.id})
+
 
 @app.get("/api/v1/tasks/{task_id}")
 async def get_status(task_id):
@@ -60,12 +62,13 @@ async def get_status(task_id):
     result = {
         "task_id": task_id,
         "task_status": task_result.status,
-        "task_result": task_result.result
+        "task_result": task_result.result,
     }
     return JSONResponse(result)
 
+
 @app.get("/api/v1/get_results")
-async def heavy_offline_results(results: Results):
+async def get_results(results: Results):
     return app._db.return_results(results.space_key, results.n_results)
 
 

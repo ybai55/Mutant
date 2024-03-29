@@ -51,15 +51,18 @@ class Clickhouse(Database):
     def _create_table_embeddings(self):
         self._conn.execute(
             f"""CREATE TABLE IF NOT EXISTS embeddings (
-            {db_array_schema_to_clickhouse_schema(EMBEDDING_TABLE_SCHEMA)}
-        ) ENGINE = MergeTree() ORDER BY space_key
-        """
+                {db_array_schema_to_clickhouse_schema(EMBEDDING_TABLE_SCHEMA)}
+            ) ENGINE = MergeTree() ORDER BY space_key"""
         )
 
+        self._conn.execute(f"""SET allow_experimental_lightweight_delete = true""")
+
     def _create_table_results(self):
-        self._conn.execute(f"""CREATE TABLE IF NOT EXISTS results (
+        self._conn.execute(
+            f"""CREATE TABLE IF NOT EXISTS results (
             {db_array_schema_to_clickhouse_schema(RESULTS_TABLE_SCHEMA)}
-        ) ENGINE = MergeTree() ORDER BY space_key""")
+        ) ENGINE = MergeTree() ORDER BY space_key"""
+        )
 
     def __init__(self):
         # https://stackoverflow.com/questions/59224272/connect-cannot-assign-requested-address
@@ -102,7 +105,7 @@ class Clickhouse(Database):
             where_string = f"WHERE space_key = '{space_key}'"
         return self._conn.execute(f"SELECT COUNT() FROM embeddings WHERE {where_string}")[0][0]
 
-    def update(self, data):  # call this update_custom_quality_score! that is all it does
+    def update(self, data):
         pass
 
     def fetch(self, where_filter={}, sort=None, limit=None, columnar=False):
@@ -167,14 +170,18 @@ class Clickhouse(Database):
         for i in range(len(space_key)):
             data_to_insert.append([space_key[i], uuids[i], custom_quality_score[i]])
 
-        self._conn.execute('''
-        INSERT INTO results (space_key, uuid, custom_quality_score) VALUES ''', data_to_insert)
+        self._conn.execute(
+            """
+        INSERT INTO results (space_key, uuid, custom_quality_score) VALUES """,
+            data_to_insert,
+        )
 
     def delete_results(self, space_key):
         self._conn.execute(f"DELETE FROM results WHERE space_key = '{space_key}'")
 
     def return_results(self, space_key, n_results=100):
-        return self._conn.execute(f'''
+        return self._conn.execute(
+            f"""
             SELECT 
                 embeddings.input_uri, 
                 embeddings.embedding_data,
@@ -190,4 +197,5 @@ class Clickhouse(Database):
             ORDER BY 
                 results.custom_quality_score DESC 
             LIMIT {n_results}
-        ''')
+        """
+        )

@@ -41,3 +41,7 @@ class RawSql(BaseModel):
 class Results(BaseModel):
     space_key: str
     n_results: int = 100
+
+
+class SpaceKeyInput(BaseModel):
+    space_key: str
