@@ -28,7 +28,7 @@ git clone https://github.com/ybai55/Mutant.git
 
 #checkout the right branch
 cd mutant
-git checkout jeff/clickhouse
+git checkout ybai55/packaging
 
 # run docker
 cd mutant-server
