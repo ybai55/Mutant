@@ -1,7 +1,7 @@
 version: '3.9'
 
 networks:
-  my-network:
+  mutant-net:
     driver: bridge
 
 services:
@@ -12,15 +12,33 @@ services:
     volumes:
       - ./mutant-server/:/mutant-server/
       - index_data:/index_data
-    command: uvicorn mutant_server:app --reload --workers 1 --host 0.0.0.0 --port 8000
-    # env_file:
-    #   - ./mutant-server/.env
+    command: uvicorn app:app --reload --workers 1 --host 0.0.0.0 --port 8000
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
     ports:
       - 8000:8000
     depends_on:
       - clickhouse
+      - redis
     networks:
-      - my-network
+      - mutant-net
+  worker:
+    build:
+      context: ./mutant-server
+      dockerfile: DockerfileCelery
+    command: celery worker --app=worker.celery --loglevel=info
+    volumes:
+      - ./mutant-server/:/mutant-server/
+      - index_data:/index_data
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    depends_on:
+      - server
+      - redis
+    networks:
+      - mutant-net
 
   clickhouse:
     image: docker.io/bitnami/clickhouse:22.9
@@ -32,7 +50,12 @@ services:
     volumes:
       - clickhouse_data:/bitnami/clickhouse
     networks:
-      - my-network
+      - mutant-net
+
+  redis:
+    image: redis:6-alpine
+    networks:
+      - mutant-net
 
 volumes:
   clickhouse_data:

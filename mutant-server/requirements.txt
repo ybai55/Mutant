@@ -9,3 +9,6 @@ posthog
 uuid==1.30
 sentry-sdk
 clickhouse_driver==0.2.4
+
+redis==3.5.3
+celery==4.4.7
