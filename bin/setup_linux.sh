@@ -1,9 +1,9 @@
 # install pip
-apt install python3-pip
+apt install -y python3-pip
 
 # install docker
 sudo apt-get update
-sudo apt-get install \
+sudo apt-get -y install \
     ca-certificates \
     curl \
     gnupg \
@@ -18,7 +18,7 @@ echo \
 
 sudo apt-get update
 
-sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
 pip3 install docker-compose
 

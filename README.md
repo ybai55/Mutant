@@ -22,3 +22,11 @@ Contents:
 - `/doc` - Project documentation
 - `/mutant-client` - Python client for mutant
 - `/mutant-server` - FastAPI server used as the backend for Mutant client
+
+### Get up and running on Linux
+No requirements
+```
+/bin/bash -c "$(curl -fsSL https://gist..../chroma_setup.sh)" 
+python3 mutant/bin/test.py
+```
+
