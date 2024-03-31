@@ -17,7 +17,7 @@ from mutant_server.types import (
     CountEmbedding,
     RawSql,
     Results,
-    SpaceKeyInput
+    SpaceKeyInput,
 )
 from celery.result import AsyncResult
 
