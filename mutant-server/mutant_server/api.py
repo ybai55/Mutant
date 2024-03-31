@@ -1,11 +1,9 @@
-import os
-import shutil
 import time
 
 from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 
-from worker import heavy_offline_analysis
+from mutant_server.worker import heavy_offline_analysis
 
 from mutant_server.db.clickhouse import Clickhouse
 from mutant_server.index.hnswlib import Hnswlib
