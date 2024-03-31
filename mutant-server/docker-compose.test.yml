@@ -14,17 +14,17 @@ services:
       - ./:/mutant-server/
       - index_data:/index_data
     depends_on:
-      - clickhouse
+      - clickhouse_test
     networks:
       - mutant-net
 
-  clickhouse:
+  clickhouse_test:
     image: docker.io/bitnami/clickhouse:22.9
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
     ports:
-      - '8123:8123'
-      - '9000:9000'
+      - '8124:8124'
+      - '9008:9008'
     networks:
       - mutant-net
 

@@ -4,7 +4,6 @@ import time
 
 from clickhouse_driver import connect, Client
 
-
 EMBEDDING_TABLE_SCHEMA = [
     {"space_key": "String"},
     {"uuid": "UUID"},
@@ -66,7 +65,7 @@ class Clickhouse(Database):
 
     def __init__(self):
         # https://stackoverflow.com/questions/59224272/connect-cannot-assign-requested-address
-        client = Client("clickhouse")
+        client = Client(host="clickhouse", port="9007")
         self._conn = client
         self._create_table_embeddings()
         self._create_table_results()
