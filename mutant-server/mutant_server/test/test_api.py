@@ -23,7 +23,7 @@ async def post_batch_records(ac):
             "input_uri": ["https://example.com", "https://example.com"],
             "dataset": ["training", "training"],
             "category_name": ["person", "person"],
-            "space_key": ["test_space", "test_space"],
+            "model_space": ["test_space", "test_space"],
         },
     )
 
@@ -42,7 +42,7 @@ async def test_fetch_from_db():
     async with AsyncClient(app=app, base_url=base_url) as ac:
         await ac.post("/api/v1/reset")
         await post_batch_records(ac)
-        params = {"where_filter": {"space_key": "test_space"}}
+        params = {"where_filter": {"model_space": "test_space"}}
         response = await ac.post("/api/v1/fetch", json=params)
     print(response.json())
     assert response.status_code == 200
@@ -54,7 +54,7 @@ async def test_count_from_db():
     async with AsyncClient(app=app, base_url=base_url) as ac:
         await ac.post("/api/v1/reset")  # reset db
         await post_batch_records(ac)
-        response = await ac.get("/api/v1/count", params={"space_key": "test_space"})
+        response = await ac.get("/api/v1/count", params={"model_space": "test_space"})
     assert response.status_code == 200
     assert response.json() == {"count": 2}
 
@@ -64,11 +64,11 @@ async def test_reset_db():
     async with AsyncClient(app=app, base_url=base_url) as ac:
         await ac.post("/api/v1/reset")
         await post_batch_records(ac)
-        response = await ac.get("/api/v1/count", params={"space_key": "test_space"})
+        response = await ac.get("/api/v1/count", params={"model_space": "test_space"})
         assert response.json() == {"count": 2}
         response = await ac.post("/api/v1/reset")
         assert response.json() == True
-        response = await ac.get("/api/v1/count", params={"space_key": "test_space"})
+        response = await ac.get("/api/v1/count", params={"model_space": "test_space"})
         assert response.json() == {"count": 0}
 
 
@@ -77,10 +77,10 @@ async def test_get_nearest_neighbors():
     async with AsyncClient(app=app, base_url=base_url) as ac:
         await ac.post("/api/v1/reset")
         await post_batch_records(ac)
-        await ac.post("/api/v1/process", params={"space_key": "test_space"})
+        await ac.post("/api/v1/process", params={"model_space": "test_space"})
         response = await ac.post(
             "/api/v1/get_nearest_neighbors", json={"embedding": [1.1, 2.3, 3.2], "n_results": 1,
-                                                   "space_key": "test_space"}
+                                                   "model_space": "test_space"}
         )
     assert response.status_code == 200
     assert len(response.json()["ids"]) == 1
@@ -91,7 +91,7 @@ async def test_get_nearest_neighbors_filter():
     async with AsyncClient(app=app, base_url=base_url) as ac:
         await ac.post("/api/v1/reset")
         await post_batch_records(ac)
-        await ac.post("/api/v1/process", json={"space_key": "test_space"})
+        await ac.post("/api/v1/process", json={"model_space": "test_space"})
         response = await ac.post(
             "/api/v1/get_nearest_neighbors",
             json={
@@ -99,7 +99,7 @@ async def test_get_nearest_neighbors_filter():
                 "n_results": 1,
                 "dataset": "training",
                 "category_name": "monkey",
-                "space_key": "test_space",
+                "model_space": "test_space",
             },
         )
     assert response.status_code == 200
@@ -111,7 +111,7 @@ async def test_process():
     async with AsyncClient(app=app, base_url=base_url) as ac:
         await ac.post("/api/v1/reset")
         await post_batch_records(ac)
-        response = await ac.post("/api/v1/process", json={"space_key": "test_space"})
+        response = await ac.post("/api/v1/process", json={"model_space": "test_space"})
     assert response.status_code == 200
     assert response.json() == {"response": "Processed space"}
 

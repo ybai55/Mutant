@@ -61,5 +61,5 @@ print(mutant.get_results())
 # mutant.log([[1, 2, 3, 4, 5]], ["/images/4"], ["training"], ['knife'])
 # mutant.log([[1, 2, 3, 4, 5]], ["/prod/2"], ["test"], ['knife'])
 #
-# print(mutant.raw_sql('SELECT DISTINCT space_key FROM embeddings;'))
+# print(mutant.raw_sql('SELECT DISTINCT model_space FROM embeddings;'))
 # print("layer 1", mutant.count(mutant.get_context()))

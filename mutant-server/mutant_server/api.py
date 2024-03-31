@@ -41,10 +41,10 @@ app._ann_index = ann_index()
 # scoping
 # an embedding space is specific to particular trained model and layer
 # instead of making the user manage this complexity, we will handle some conventions here
-# that being said, we will only store a single string, "space_key" in the db, which the user can, in principle, override
-# - embeddings are always written with and fetched from the same space_key
-# - indexes are specific to a space_key and a timestamp
-# - the client can handle the app + model_version + layer => space_key string generation
+# that being said, we will only store a single string, "model_space" in the db, which the user can, in principle, override
+# - embeddings are always written with and fetched from the same model_space
+# - indexes are specific to a model_space and a timestamp
+# - the client can handle the app + model_version + layer => model_space string generation
 
 # API Endpoints
 
@@ -58,8 +58,8 @@ async def root():
 
 
 @app.post("/api/v1/calculate_results")
-async def calculate_results(space_key: SpaceKeyInput):
-    task = heavy_offline_analysis(space_key)
+async def calculate_results(model_space: SpaceKeyInput):
+    task = heavy_offline_analysis(model_space)
     mutant_telemetry.capture('heavy-offline-analysis')
     return JSONResponse({"task_id": task.id})
 
@@ -77,7 +77,7 @@ async def get_status(task_id):
 
 @app.post("/api/v1/get_results")
 async def get_results(results: Results):
-    return app._db.return_results(results.space_key, results.n_results)
+    return app._db.return_results(results.model_space, results.n_results)
 
 
 @app.post("/api/v1/add", status_code=status.HTTP_201_CREATED)
@@ -86,15 +86,15 @@ async def add_to_db(new_embedding: AddEmbedding):
     Save embedding to database
     - supports single or batched embeddings
     """
-    # print("add_to_db, new_embedding.space_key", new_embedding, new_embedding.space_key)
+    # print("add_to_db, new_embedding.model_space", new_embedding, new_embedding.model_space)
     number_of_embeddings = len(new_embedding.embedding_data)
 
-    if isinstance(new_embedding.space_key, str):
-        space_key = [new_embedding.space_key] * number_of_embeddings
-    elif len(new_embedding.space_key) == 1:
-        space_key = [new_embedding.space_key[0]] * number_of_embeddings
+    if isinstance(new_embedding.model_space, str):
+        model_space = [new_embedding.model_space] * number_of_embeddings
+    elif len(new_embedding.model_space) == 1:
+        model_space = [new_embedding.model_space[0]] * number_of_embeddings
     else:
-        space_key = new_embedding.space_key
+        model_space = new_embedding.model_space
 
     if isinstance(new_embedding.dataset, str):
         dataset = [new_embedding.dataset] * number_of_embeddings
@@ -104,10 +104,10 @@ async def add_to_db(new_embedding: AddEmbedding):
         dataset = new_embedding.dataset
 
     # print the len of all inputs too add_batch
-    print(len(new_embedding.embedding_data), len(new_embedding.input_uri), len(space_key), len(dataset))
+    print(len(new_embedding.embedding_data), len(new_embedding.input_uri), len(model_space), len(dataset))
 
     app._db.add_batch(
-        space_key,
+        model_space,
         new_embedding.embedding_data,
         new_embedding.input_uri,
         dataset,
@@ -123,10 +123,10 @@ async def process(process_embedding: ProcessEmbedding):
     """
     Currently generates an index for the embedding db
     """
-    fetch = app._db.fetch({"space_key": process_embedding.space_key}, columnar=True)
+    fetch = app._db.fetch({"model_space": process_embedding.model_space}, columnar=True)
     # print("process, where_filter", where_filter)
     mutant_telemetry.capture('capture-index', {'n', len(fetch[2])})
-    app._ann_index.run(process_embedding.space_key, fetch[1], fetch[2])  # more magic number, ugh
+    app._ann_index.run(process_embedding.model_space, fetch[1], fetch[2])  # more magic number, ugh
 
     return {"response": "Processed space"}
 
@@ -150,11 +150,11 @@ async def delete(embedding: DeleteEmbedding):
 
 
 @app.get("/api/v1/count")
-async def count(space_key: str = None):
+async def count(model_space: str = None):
     """
     Returns the number of records in the database
     """
-    return {"count": app._db.count(space_key=space_key)}
+    return {"count": app._db.count(model_space=model_space)}
 
 
 @app.post("/api/v1/reset")
@@ -173,13 +173,13 @@ async def get_nearest_neighbors(embedding: QueryEmbedding):
     """
     return the distance, database ids, and embedding themselves for the input embedding
     """
-    if embedding.space_key is None:
-        return {"error": "space_key is required"}
+    if embedding.model_space is None:
+        return {"error": "model_space is required"}
 
     ids = None
 
     filter_by_where = {}
-    filter_by_where["space_key"] = embedding.space_key
+    filter_by_where["model_space"] = embedding.model_space
     if embedding.category_name is not None:
         filter_by_where["category_name"] = embedding.category_name
     if embedding.dataset is not None:
@@ -194,7 +194,7 @@ async def get_nearest_neighbors(embedding: QueryEmbedding):
 
     # nn = app._ann_index.get_nearest_neighbors(embedding.embedding, embedding.n_results, ids)
     uuids, distances = app._ann_index.get_nearest_neighbors(
-        embedding.space_key, embedding.embedding, embedding.n_results, ids
+        embedding.model_space, embedding.embedding, embedding.n_results, ids
     )
     print("uuids", uuids)
     print("distances", distances.tolist()[0])

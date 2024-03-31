@@ -9,7 +9,7 @@ class Database:
     @abstractmethod
     def add_batch(
         self,
-        space_key,
+        model_space,
         embedding_data,
         input_uri,
         dataset=None,
@@ -19,7 +19,7 @@ class Database:
         pass
 
     @abstractmethod
-    def count(self, space_key=None):
+    def count(self, model_space=None):
         pass
 
     @abstractmethod

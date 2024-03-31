@@ -1,7 +1,7 @@
 from mutant_client import Mutant
 
 mutant =Mutant()
-mutant.set_space_key('sample_space')
+mutant.set_model_space('sample_space')
 print("Getting heartbeat to verify the server is up")
 print(mutant.heartbeat())
 

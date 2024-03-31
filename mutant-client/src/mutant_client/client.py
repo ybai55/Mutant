@@ -6,7 +6,7 @@ from typing import Union
 class Mutant:
 
     _api_url = "http://localhost:8000/api/v1"
-    _space_key = "default_scope"
+    _model_space = "default_scope"
 
     def __init__(self, url=None, app=None, model_version=None, layer=None):
         """Initialize Mutant client"""
@@ -15,25 +15,25 @@ class Mutant:
             self._api_url = url
 
         if app and model_version and layer:
-            self._space_key = app + "_" + model_version + "_" + layer
+            self._model_space = app + "_" + model_version + "_" + layer
 
     def set_context(self, app, model_version, layer):
         """
         Sets the context of the client
         """
-        self._space_key = app + "_" + model_version + "_"
+        self._model_space = app + "_" + model_version + "_"
 
-    def set_space_key(self, space_key):
+    def set_model_space(self, model_space):
         """
         Sets the space key for client, enables overriding the string concat
         """
-        self._space_key = space_key
+        self._model_space = model_space
 
     def get_context(self):
         """
         Returns the space key
         """
-        return self._space_key
+        return self._model_space
 
     def heartbeat(self):
         """
@@ -41,14 +41,14 @@ class Mutant:
         """
         return requests.get(self._api_url).json()
 
-    def count(self, space_key=None, all=False):
+    def count(self, model_space=None, all=False):
         """
         Return the number of embeddings in the database
         """
-        params = {"space_key": space_key or self._space_key}
+        params = {"model_space": model_space or self._model_space}
 
         if all:
-            params["space_key"] = None
+            params["model_space"] = None
 
         x = requests.get(self._api_url + "/count", params=params)
         return x.json()
@@ -57,8 +57,8 @@ class Mutant:
         """
         Fetches embeddings from the database
         """
-        if self._space_key:
-            where_filter["space_key"] = self._space_key
+        if self._model_space:
+            where_filter["model_space"] = self._model_space
         if page and page_size:
             offset = (page - 1) * page_size
             limit = page_size
@@ -73,8 +73,8 @@ class Mutant:
 
     def delete(self, where_filter={}):
         """Deletes embeddings from the database"""
-        if self._space_key:
-            where_filter["space_key"] = self._space_key
+        if self._model_space:
+            where_filter["model_space"] = self._model_space
 
         return requests.post(self._api_url + "/delete", data=json.dumps({
             "where_filter": where_filter,
@@ -86,21 +86,21 @@ class Mutant:
         input_uri: list,
         dataset: list = None,
         category_name: list = None,
-        space_keys: list = None,
+        model_spaces: list = None,
     ):
         """
         Logs a batch of embeddings to the database
         - pass in column oriented data lists
         """
 
-        if not space_keys:
-            space_keys = self._space_key
+        if not model_spaces:
+            model_spaces = self._model_space
 
         x = requests.post(
             self._api_url + "/add",
             data=json.dumps(
                 {
-                    "space_keys": space_keys,
+                    "model_spaces": model_spaces,
                     "embedding_data": embedding_data,
                     "input_uri": input_uri,
                     "dataset": dataset,
@@ -115,7 +115,7 @@ class Mutant:
             return False
 
     def log_training(
-        self, embedding_data: list, input_uri: list, category_name: list, space_keys: list = None
+        self, embedding_data: list, input_uri: list, category_name: list, model_spaces: list = None
     ):
         """
         Small wrapper around log() to log a batch of training embedding
@@ -126,11 +126,11 @@ class Mutant:
             input_uri=input_uri,
             dataset=["training"] * len(embedding_data),
             category_name=category_name,
-            space_keys=space_keys,
+            model_spaces=model_spaces,
         )
 
     def log_production(
-        self, embedding_data: list, input_uri: list, category_name: list, space_keys: list = None
+        self, embedding_data: list, input_uri: list, category_name: list, model_spaces: list = None
     ):
         """
         Small wrapper around log() to log a batch of production embedding
@@ -141,11 +141,11 @@ class Mutant:
             input_uri=input_uri,
             dataset=["production"] * len(embedding_data),
             category_name=category_name,
-            space_keys=space_keys,
+            model_spaces=model_spaces,
         )
 
     def log_triage(
-        self, embedding_data: list, input_uri: list, category_name: list, space_keys: list = None
+        self, embedding_data: list, input_uri: list, category_name: list, model_spaces: list = None
     ):
         """
         Small wrapper around log() to log a batch of triage embedding
@@ -156,23 +156,23 @@ class Mutant:
             input_uri=input_uri,
             dataset=["triage"] * len(embedding_data),
             category_name=category_name,
-            space_keys=space_keys,
+            model_spaces=model_spaces,
         )
 
     def get_nearest_neighbors(
-        self, embedding, n_results=10, category_name=None, dataset="training", space_key=None
+        self, embedding, n_results=10, category_name=None, dataset="training", model_space=None
     ):
         """
         Gets the nearest neighbors of a single embedding
         """
-        if not space_key:
-            space_key = self._space_key
+        if not model_space:
+            model_space = self._model_space
 
         x = requests.post(
             self._api_url + "/get_nearest_neighbors",
             data=json.dumps(
                 {
-                    "space_key": space_key,
+                    "model_space": model_space,
                     "embedding": embedding,
                     "n_results": n_results,
                     "category_name": category_name,
@@ -186,13 +186,13 @@ class Mutant:
         else:
             return False
 
-    def process(self, space_key=None):
+    def process(self, model_space=None):
         """
         Processes embeddings in the database
         - currently this only runs hnswlib, doesn't return anything
         """
         requests.post(
-            self._api_url + "/process", data=json.dumps({"space_key": space_key or self._space_key})
+            self._api_url + "/process", data=json.dumps({"model_space": model_space or self._model_space})
         )
         return True
 
@@ -204,18 +204,18 @@ class Mutant:
         """Runs a raw SQL query against the database"""
         return requests.post(self._api_url + "/raw_sql", data=json.dumps({"raw_sql": sql})).json()
 
-    def calculate_results(self, space_key=None):
+    def calculate_results(self, model_space=None):
         """Calculate the results for the given space key"""
         return requests.post(
             self._api_url + "/calculate_results",
-            data=json.dumps({"space_key": space_key or self._space_key}),
+            data=json.dumps({"model_space": model_space or self._model_space}),
         ).json()
 
-    def get_results(self, space_key=None, n_results=100):
+    def get_results(self, model_space=None, n_results=100):
         """Gets results for the given space key"""
         return requests.post(
             self._api_url + "/get_results",
-            data=json.dumps({"space_key": space_key or self._space_key, "n_results": n_results}),
+            data=json.dumps({"model_space": model_space or self._model_space, "n_results": n_results}),
         ).json()
 
     def get_task_status(self, task_id):
