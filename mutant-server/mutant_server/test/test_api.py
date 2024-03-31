@@ -66,15 +66,16 @@ async def test_add_to_db_batch():
     assert response.json() == {"response": "Added records to database"}
 
 
-#
-#
-# @pytest.mark.anyio
-# async def test_fetch_from_db():
-#     async with AsyncClient(app=app, base_url=base_url) as ac:
-#         await post_one_record(ac)
-#         response = await ac.get("/api/v1/fetch", params={"limit": 1})
-#     assert response.status_code == 200
-#     assert len(response.json()) == 1
+@pytest.mark.anyio
+async def test_fetch_from_db():
+    async with AsyncClient(app=app, base_url=base_url) as ac:
+        await ac.get("/api/v1/reset")
+        await post_batch_records(ac)
+        params = {"where_filter": {"space_key": "test_space"}}
+        response = await ac.post("/api/v1/fetch", json=params)
+    print(response.json())
+    assert response.status_code == 200
+    assert len(response.json()) == 2
 #
 #
 # @pytest.mark.anyio
