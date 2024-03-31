@@ -11,10 +11,8 @@ services:
       dockerfile: Dockerfile
       target: mutant_server_test
     volumes:
+      - ./:/mutant-server/
       - index_data:/index_data
-#      - ./mutant-server/:/mutant-server/
-#    ports:
-#      - 8000:8000
     depends_on:
       - clickhouse
     networks:
@@ -27,13 +25,9 @@ services:
     ports:
       - '8123:8123'
       - '9000:9000'
-#    volumes:
-#      - clickhouse_data:/bitnami/clickhouse
     networks:
       - mutant-net
 
 volumes:
-  clickhouse_data:
-    driver: local
   index_data:
     driver: local
