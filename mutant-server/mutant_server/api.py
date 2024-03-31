@@ -16,7 +16,15 @@ from mutant_server.types import (
     RawSql,
     Results,
     SpaceKeyInput,
+    DeleteEmbedding
 )
+from mutant_server.utils.telemetry.capture import Capture
+from mutant_server.utils.error_reporting import init_error_reporting
+
+mutant_telemetry = Capture()
+mutant_telemetry.capture('server-start')
+init_error_reporting()
+
 from celery.result import AsyncResult
 
 # Boot script
@@ -28,6 +36,7 @@ app = FastAPI(debug=True)
 # init db and index
 app._db = db()
 app._ann_index = ann_index()
+
 
 # scoping
 # an embedding space is specific to particular trained model and layer
@@ -51,6 +60,7 @@ async def root():
 @app.post("/api/v1/calculate_results")
 async def calculate_results(space_key: SpaceKeyInput):
     task = heavy_offline_analysis(space_key)
+    mutant_telemetry.capture('heavy-offline-analysis')
     return JSONResponse({"task_id": task.id})
 
 
@@ -77,13 +87,31 @@ async def add_to_db(new_embedding: AddEmbedding):
     - supports single or batched embeddings
     """
     # print("add_to_db, new_embedding.space_key", new_embedding, new_embedding.space_key)
+    number_of_embeddings = len(new_embedding.embedding_data)
+
+    if isinstance(new_embedding.space_key, str):
+        space_key = [new_embedding.space_key] * number_of_embeddings
+    elif len(new_embedding.space_key) == 1:
+        space_key = [new_embedding.space_key[0]] * number_of_embeddings
+    else:
+        space_key = new_embedding.space_key
+
+    if isinstance(new_embedding.dataset, str):
+        dataset = [new_embedding.dataset] * number_of_embeddings
+    elif len(new_embedding.dataset) == 1:
+        dataset = [new_embedding.dataset[0]] * number_of_embeddings
+    else:
+        dataset = new_embedding.dataset
+
+    # print the len of all inputs too add_batch
+    print(len(new_embedding.embedding_data), len(new_embedding.input_uri), len(space_key), len(dataset))
 
     app._db.add_batch(
-        new_embedding.space_key,
+        space_key,
         new_embedding.embedding_data,
         new_embedding.input_uri,
-        new_embedding.dataset,
-        new_embedding.custom_quality_score,
+        dataset,
+        None,
         new_embedding.category_name,
     )
 
@@ -95,9 +123,10 @@ async def process(process_embedding: ProcessEmbedding):
     """
     Currently generates an index for the embedding db
     """
-    where_filter = {"space_key": process_embedding.space_key}
+    fetch = app._db.fetch({"space_key": process_embedding.space_key}, columnar=True)
     # print("process, where_filter", where_filter)
-    app._ann_index.run(process_embedding.space_key, app._db.fetch(where_filter))
+    mutant_telemetry.capture('capture-index', {'n', len(fetch[2])})
+    app._ann_index.run(process_embedding.space_key, fetch[1], fetch[2])  # more magic number, ugh
 
     return {"response": "Processed space"}
 
@@ -108,11 +137,20 @@ async def fetch(embedding: FetchEmbedding):
     Fetches embeddings from the database
     - enables filtering by where_filter, sorting by key, and limiting the number of results
     """
-    return app._db.fetch(embedding.where_filter, embedding.sort, embedding.limit)
+    return app._db.fetch(embedding.where_filter, embedding.sort, embedding.limit, embedding.offset)
+
+
+@app.post("/api/v1/delete")
+async def delete(embedding: DeleteEmbedding):
+    """
+    Deletes embeddings from the database
+    - enables filtering by where_filter
+    """
+    return app._db.delete(embedding.where_filter)
 
 
 @app.get("/api/v1/count")
-async def count(space_key: str):
+async def count(space_key: str = None):
     """
     Returns the number of records in the database
     """

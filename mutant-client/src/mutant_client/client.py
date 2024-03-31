@@ -41,23 +41,44 @@ class Mutant:
         """
         return requests.get(self._api_url).json()
 
-    def count(self, space_key=None):
+    def count(self, space_key=None, all=False):
         """
         Return the number of embeddings in the database
         """
-        x = requests.get(
-            self._api_url + "/count", params={"space_key": space_key or self._space_key})
+        params = {"space_key": space_key or self._space_key}
+
+        if all:
+            params["space_key"] = None
+
+        x = requests.get(self._api_url + "/count", params=params)
         return x.json()
 
-    def fetch(self, where_filter={}, sort=None, limit=None):
+    def fetch(self, where_filter={}, sort=None, limit=None, offset=None, page=None, page_size=None):
         """
         Fetches embeddings from the database
         """
-        where_filter["space_key"] = self._space_key
+        if self._space_key:
+            where_filter["space_key"] = self._space_key
+        if page and page_size:
+            offset = (page - 1) * page_size
+            limit = page_size
         return requests.post(
             self._api_url + "/fetch",
-            data=json.dumps({"where_filter": where_filter, "sort": sort, "limit": limit}),
-        ).json()
+            data=json.dumps({
+                "where_filter": where_filter,
+                "sort": sort,
+                "limit": limit,
+                "offset": offset
+            })).json()
+
+    def delete(self, where_filter={}):
+        """Deletes embeddings from the database"""
+        if self._space_key:
+            where_filter["space_key"] = self._space_key
+
+        return requests.post(self._api_url + "/delete", data=json.dumps({
+            "where_filter": where_filter,
+        })).json()
 
     def log(
         self,
@@ -73,10 +94,7 @@ class Mutant:
         """
 
         if not space_keys:
-            if isinstance(dataset, list):
-                space_keys = [self._space_key] * len(dataset)
-            else:
-                space_keys = self._space_key
+            space_keys = self._space_key
 
         x = requests.post(
             self._api_url + "/add",
