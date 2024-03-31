@@ -112,6 +112,10 @@ if __name__ == "__main__":
     end = time.time()
     print("Time to get nearest neighbors: " +'{0:.2f}'.format((end - start)) + 's')
 
+    task = mutant.calculate_results()
+    print(task)
+    print(mutant.get_task_status(task['task_id']))
+
     fetched = mutant.count()
     print("Records loaded into the database: ", fetched)
     del mutant

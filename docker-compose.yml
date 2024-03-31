@@ -49,6 +49,8 @@ services:
       - '9000:9000'
     volumes:
       - clickhouse_data:/bitnami/clickhouse
+      - backups:/backups
+      - ./config/backup_disk.xml:/etc/clickhouse-server/config.d/backup_disk.xml
     networks:
       - mutant-net
 
@@ -61,4 +63,6 @@ volumes:
   clickhouse_data:
     driver: local
   index_data:
+    driver: local
+  backups:
     driver: local
