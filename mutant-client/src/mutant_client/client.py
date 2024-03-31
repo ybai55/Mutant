@@ -46,8 +46,7 @@ class Mutant:
         Return the number of embeddings in the database
         """
         x = requests.get(
-            self._api_url + "/count", data=json.dumps({"space_key": space_key or self._space_key})
-        )
+            self._api_url + "/count", params={"space_key": space_key or self._space_key})
         return x.json()
 
     def fetch(self, where_filter={}, sort=None, limit=None):
@@ -174,33 +173,33 @@ class Mutant:
         Processes embeddings in the database
         - currently this only runs hnswlib, doesn't return anything
         """
-        requests.get(
+        requests.post(
             self._api_url + "/process", data=json.dumps({"space_key": space_key or self._space_key})
         )
         return True
 
     def reset(self):
         """Resets the database"""
-        return requests.get(self._api_url + "/reset")
+        return requests.post(self._api_url + "/reset")
 
     def raw_sql(self, sql):
         """Runs a raw SQL query against the database"""
-        return requests.get(self._api_url + "/raw_sql", data=json.dumps({"raw_sql": sql})).json()
+        return requests.post(self._api_url + "/raw_sql", data=json.dumps({"raw_sql": sql})).json()
 
     def calculate_results(self, space_key=None):
         """Calculate the results for the given space key"""
-        return requests.get(
+        return requests.post(
             self._api_url + "/calculate_results",
             data=json.dumps({"space_key": space_key or self._space_key}),
         ).json()
 
     def get_results(self, space_key=None, n_results=100):
         """Gets results for the given space key"""
-        return requests.get(
+        return requests.post(
             self._api_url + "/get_results",
             data=json.dumps({"space_key": space_key or self._space_key, "n_results": n_results}),
         ).json()
 
     def get_task_status(self, task_id):
         """Gets the status of a task"""
-        return requests.get(self._api_url + f"/tasks/{task_id}").json()
+        return requests.post(self._api_url + f"/tasks/{task_id}").json()

@@ -48,13 +48,13 @@ async def root():
     return {"nanosecond heartbeat": int(1000 * time.time_ns())}
 
 
-@app.get("/api/v1/calculate_results")
+@app.post("/api/v1/calculate_results")
 async def calculate_results(space_key: SpaceKeyInput):
     task = heavy_offline_analysis(space_key)
     return JSONResponse({"task_id": task.id})
 
 
-@app.get("/api/v1/tasks/{task_id}")
+@app.post("/api/v1/tasks/{task_id}")
 async def get_status(task_id):
     task_result = AsyncResult(task_id)
     result = {
@@ -65,7 +65,7 @@ async def get_status(task_id):
     return JSONResponse(result)
 
 
-@app.get("/api/v1/get_results")
+@app.post("/api/v1/get_results")
 async def get_results(results: Results):
     return app._db.return_results(results.space_key, results.n_results)
 
@@ -90,7 +90,7 @@ async def add_to_db(new_embedding: AddEmbedding):
     return {"response": "Added record to database"}
 
 
-@app.get("/api/v1/process")
+@app.post("/api/v1/process")
 async def process(process_embedding: ProcessEmbedding):
     """
     Currently generates an index for the embedding db
@@ -98,6 +98,8 @@ async def process(process_embedding: ProcessEmbedding):
     where_filter = {"space_key": process_embedding.space_key}
     # print("process, where_filter", where_filter)
     app._ann_index.run(process_embedding.space_key, app._db.fetch(where_filter))
+
+    return {"response": "Processed space"}
 
 
 @app.post("/api/v1/fetch")
@@ -110,14 +112,15 @@ async def fetch(embedding: FetchEmbedding):
 
 
 @app.get("/api/v1/count")
-async def count(count_embedding: CountEmbedding):
+async def count(space_key: str):
     """
     Returns the number of records in the database
     """
-    return {"count": app._db.count(space_key=count_embedding.space_key)}
+    print("space_key", space_key)
+    return {"count": app._db.count(space_key=space_key)}
 
 
-@app.get("/api/v1/reset")
+@app.post("/api/v1/reset")
 async def reset():
     """
     Reset the database and index
@@ -165,6 +168,6 @@ async def get_nearest_neighbors(embedding: QueryEmbedding):
     }
 
 
-@app.get("/api/v1/raw_sql")
+@app.post("/api/v1/raw_sql")
 async def raw_sql(raw_sql: RawSql):
     return app._db.raw_sql(raw_sql.raw_sql)
