@@ -55,7 +55,7 @@ class Mutant:
         Fetches embeddings from the database
         """
         where_filter["space_key"] = self._space_key
-        return requests.get(
+        return requests.post(
             self._api_url + "/fetch",
             data=json.dumps({"where_filter": where_filter, "sort": sort, "limit": limit}),
         ).json()
