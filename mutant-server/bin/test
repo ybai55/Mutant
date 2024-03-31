@@ -1,4 +1,6 @@
-#!/usr/bin/env bash -e
+#!/usr/bin/env bash
+
+set -e
 
 function cleanup {
   docker-compose -f docker-compose.test.yml down
@@ -6,4 +8,4 @@ function cleanup {
 
 trap cleanup EXIT
 
-docker-compose -f docker-compose.test.yml run --rm server_test echo hi
+docker-compose -f docker-compose.test.yml run --rm server_test
