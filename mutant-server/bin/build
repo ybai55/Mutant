@@ -6,4 +6,4 @@ if [[ -n `git status --porcelain` ]]; then
     VERSION=$VERSION-dirty
 fi
 
-docker build . -t ghcr.io/Mutant/mutant-server:`bin/version`
+docker build . --target mutant_server -t ghcr.io/Mutant/mutant-server:`bin/version`

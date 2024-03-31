@@ -44,6 +44,7 @@ jobs:
       with:
         context: mutant-server
         push: true
+        target: mutant_server
         tags: ${{ steps.tag.outputs.tag_name}}
     - name: Get Release Version
       id: version

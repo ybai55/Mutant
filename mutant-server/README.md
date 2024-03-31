@@ -13,7 +13,8 @@ pip install -r requirements_dev.txt
 ```
 TODO: write conda venv settings
 
-To run test, run `pytest`
+To run test, run `bin/test`. This will run the test suite inside a 
+docker compose cluster, with the database available, and cleanup when complete.
 
 To run the server locally, in development mode, run `uvicorn mutant_server:app --reload`
 

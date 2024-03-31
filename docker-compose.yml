@@ -9,6 +9,7 @@ services:
     build:
       context: ./mutant-server
       dockerfile: Dockerfile
+      target: mutant_server
     volumes:
       - ./mutant-server/:/mutant-server/
       - index_data:/index_data
