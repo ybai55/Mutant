@@ -25,33 +25,14 @@ services:
     image: docker.io/bitnami/clickhouse:22.9
     environment:
       - ALLOW_EMPTY_PASSWORD=yes
+      - CLICKHOUSE_TCP_PORT=9001
+      - CLICKHOUSE_HTTP_PORT=8124
     ports:
       - '8124:8124'
       - '9001:9001'
     networks:
       - mutant-net
 
-  redis:
-    image: redis:6-alpine
-    networks:
-      - mutant-net
-
-  worker:
-    build:
-      context: .
-      dockerfile: DockerfileCelery
-    command: celery worker --app=worker.celery --loglevel=info
-    volumes:
-      - ./:/mutant-server/
-      - index_data:/index_data
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    depends_on:
-      - server_test
-      - redis
-    networks:
-      - mutant-net
 
 volumes:
   index_data:
