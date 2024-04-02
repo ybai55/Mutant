@@ -19,7 +19,7 @@ if __name__ == "__main__":
 
     data_length = len(df)
 
-    mutant = Mutant(app="yolov3", model_version="1", layer="1")
+    mutant = Mutant(model_space="yolov3")
     mutant.reset()  # make sure we are using a fresh db
     allstart = time.time()
     start = time.time()
@@ -31,7 +31,7 @@ if __name__ == "__main__":
 
     for i in range(0, data_length, BATCH_SIZE):
         # exist after batch size is more than 50000
-        if i >= 300_000:
+        if i >= 200_000:
             break
         end = time.time()
         page = i * BATCH_SIZE
