@@ -73,7 +73,7 @@ class Clickhouse(Database):
         self._create_table_embeddings()
         self._create_table_results()
 
-    def add_batch(
+    def add(
         self,
         model_space,
         embedding_data,

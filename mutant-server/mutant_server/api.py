@@ -81,7 +81,7 @@ async def get_results(results: Results):
 
 
 @app.post("/api/v1/add", status_code=status.HTTP_201_CREATED)
-async def add_to_db(new_embedding: AddEmbedding):
+async def add(new_embedding: AddEmbedding):
     """
     Save embedding to database
     - supports single or batched embeddings
@@ -103,10 +103,10 @@ async def add_to_db(new_embedding: AddEmbedding):
     else:
         dataset = new_embedding.dataset
 
-    # print the len of all inputs too add_batch
+    # print the len of all inputs to add
     print(len(new_embedding.embedding_data), len(new_embedding.input_uri), len(model_space), len(dataset))
 
-    app._db.add_batch(
+    app._db.add(
         model_space,
         new_embedding.embedding_data,
         new_embedding.input_uri,

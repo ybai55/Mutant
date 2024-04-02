@@ -80,7 +80,7 @@ class Mutant:
             "where_filter": where_filter,
         })).json()
 
-    def log(
+    def add(
         self,
         embedding_data: list,
         input_uri: list,
@@ -89,7 +89,7 @@ class Mutant:
         model_spaces: list = None,
     ):
         """
-        Logs a batch of embeddings to the database
+        Adds a batch of embeddings to the database
         - pass in column oriented data lists
         """
 
@@ -114,14 +114,14 @@ class Mutant:
         else:
             return False
 
-    def log_training(
+    def add_training(
         self, embedding_data: list, input_uri: list, category_name: list, model_spaces: list = None
     ):
         """
-        Small wrapper around log() to log a batch of training embedding
+        Small wrapper around add() to log a batch of training embedding
         - sets dataset to "training"
         """
-        return self.log(
+        return self.add(
             embedding_data=embedding_data,
             input_uri=input_uri,
             dataset=["training"] * len(embedding_data),
@@ -129,14 +129,14 @@ class Mutant:
             model_spaces=model_spaces,
         )
 
-    def log_production(
+    def add_production(
         self, embedding_data: list, input_uri: list, category_name: list, model_spaces: list = None
     ):
         """
-        Small wrapper around log() to log a batch of production embedding
+        Small wrapper around add() to log a batch of production embedding
         - sets dataset to "production"
         """
-        return self.log(
+        return self.add(
             embedding_data=embedding_data,
             input_uri=input_uri,
             dataset=["production"] * len(embedding_data),
@@ -144,14 +144,14 @@ class Mutant:
             model_spaces=model_spaces,
         )
 
-    def log_triage(
+    def add_triage(
         self, embedding_data: list, input_uri: list, category_name: list, model_spaces: list = None
     ):
         """
-        Small wrapper around log() to log a batch of triage embedding
+        Small wrapper around add() to log a batch of triage embedding
         - sets dataset to "triage"
         """
-        return self.log(
+        return self.add(
             embedding_data=embedding_data,
             input_uri=input_uri,
             dataset=["triage"] * len(embedding_data),

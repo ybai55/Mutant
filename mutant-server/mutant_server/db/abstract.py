@@ -7,7 +7,7 @@ class Database:
         pass
 
     @abstractmethod
-    def add_batch(
+    def add(
         self,
         model_space,
         embedding_data,

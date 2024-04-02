@@ -28,8 +28,21 @@ async def post_batch_records(ac):
     )
 
 
+async def post_batch_records_minimal(ac):
+    return await ac.post(
+        "/api/v1/add",
+        json={
+            "embedding_data": [[1.1, 2.3, 3.2], [1.2, 2.24, 3.2]],
+            "input_uri": ["https://example.com", "https://example.com"],
+            "dataset": "training",
+            "category_name": ["person", "person"],
+            "model_space": "test_space"
+        },
+    )
+
+
 @pytest.mark.anyio
-async def test_add_to_db_batch():
+async def test_add_batch():
     async with AsyncClient(app=app, base_url=base_url) as ac:
         response = await post_batch_records(ac)
     print(response.json())
@@ -45,6 +58,27 @@ async def test_fetch_from_db():
         params = {"where_filter": {"model_space": "test_space"}}
         response = await ac.post("/api/v1/fetch", json=params)
     print(response.json())
+    assert response.status_code == 200
+    assert len(response.json()) == 2
+
+
+async def test_add_batch_minimal():
+    async with AsyncClient(app=app, base_url=base_url) as ac:
+        await ac.post("/api/v1/reset")
+        response = await post_batch_records_minimal(ac)
+        assert response.status_code == 201
+        assert response.json() == {"response": "Added records to database"}
+        response = await ac.get("/api/v1/count", params={"model_space": "test_space"})
+        assert response.json() == {"count": 2}
+
+
+@pytest.mark.anyio
+async def test_fetch_from_db():
+    async with AsyncClient(app=app, base_url=base_url) as ac:
+        await ac.post("/api/v1/reset")
+        await post_batch_records(ac)
+        params = {"where_filter": {"model_space": "test_space"}}
+        response = await ac.post("/api/v1/fetch", params=params)
     assert response.status_code == 200
     assert len(response.json()) == 2
 
