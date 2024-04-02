@@ -10,7 +10,7 @@ class Database:
     def add(
         self,
         model_space,
-        embedding_data,
+        embedding,
         input_uri,
         dataset=None,
         custom_quality_score=None,

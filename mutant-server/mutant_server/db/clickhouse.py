@@ -76,19 +76,19 @@ class Clickhouse(Database):
     def add(
         self,
         model_space,
-        embedding_data,
+        embedding,
         input_uri,
         dataset=None,
         custom_quality_score=None,
         category_name=None,
     ):
         data_to_insert = []
-        for i in range(len(embedding_data)):
+        for i in range(len(embedding)):
             data_to_insert.append(
                 [
                     model_space[i],
                     uuid.uuid4(),
-                    embedding_data[i],
+                    embedding[i],
                     input_uri[i],
                     dataset[i],
                     category_name[i],
@@ -97,7 +97,7 @@ class Clickhouse(Database):
 
         self._conn.execute(
             """
-        INSERT INTO embeddings (model_space, uuid, embedding_data, input_uri, dataset, category_name) VALUES """,
+        INSERT INTO embeddings (model_space, uuid, embedding, input_uri, dataset, category_name) VALUES """,
             data_to_insert,
         )
 
@@ -217,7 +217,7 @@ class Clickhouse(Database):
             f"""
             SELECT 
                 embeddings.input_uri, 
-                embeddings.embedding_data,
+                embeddings.embedding,
                 results.custom_quality_score 
             FROM
                 results

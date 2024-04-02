@@ -50,7 +50,7 @@ if __name__ == "__main__":
             row['embedding_data'] = row['embedding_data'].tolist()
 
         # get the data
-        embedding_data = batch['embedding_data'].tolist()
+        embedding = batch['embedding_data'].tolist()
         input_uri = batch['resource_uri'].tolist()
 
         # get category name from batch["infer"]
@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
         # log the batch
         mutant.add(
-            embedding_data=embedding_data,
+            embedding=embedding,
             input_uri=input_uri,
             dataset=dataset,
             category_name=category_names
