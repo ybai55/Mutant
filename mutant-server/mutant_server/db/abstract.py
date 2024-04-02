@@ -15,6 +15,7 @@ class Database:
         dataset=None,
         custom_quality_score=None,
         inference_class=None,
+        label_class=None
     ):
         pass
 

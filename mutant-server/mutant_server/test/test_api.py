@@ -23,6 +23,7 @@ async def post_batch_records(ac):
             "input_uri": ["https://example.com", "https://example.com"],
             "dataset": ["training", "training"],
             "inference_class": ["person", "person"],
+            "label_class": ["person", "person"],
             "model_space": ["test_space", "test_space"],
         },
     )
@@ -37,7 +38,7 @@ async def post_batch_records_minimal(ac):
             "dataset": "training",
             "inference_class": ["person", "person"],
             "model_space": "test_space"
-        },
+        },  # label_class left off on purpose
     )
 
 
