@@ -14,7 +14,7 @@ class Database:
         input_uri,
         dataset=None,
         custom_quality_score=None,
-        category_name=None,
+        inference_class=None,
     ):
         pass
 

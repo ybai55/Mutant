@@ -82,7 +82,7 @@ class Mutant:
         embedding: list,
         input_uri: list,
         dataset: list = None,
-        category_name: list = None,
+        inference_class: list = None,
         model_spaces: list = None,
     ):
         """
@@ -101,7 +101,7 @@ class Mutant:
                     "embedding_data": embedding,
                     "input_uri": input_uri,
                     "dataset": dataset,
-                    "category_name": category_name,
+                    "category_name": inference_class,
                 }
             ),
         )
@@ -112,7 +112,7 @@ class Mutant:
             return False
 
     def add_training(
-        self, embedding: list, input_uri: list, category_name: list, model_spaces: list = None
+        self, embedding: list, input_uri: list, inference_class: list, model_spaces: list = None
     ):
         """
         Small wrapper around add() to log a batch of training embedding
@@ -122,12 +122,12 @@ class Mutant:
             embedding=embedding,
             input_uri=input_uri,
             dataset=["training"] * len(embedding),
-            category_name=category_name,
+            inference_class=inference_class,
             model_spaces=model_spaces,
         )
 
     def add_production(
-        self, embedding: list, input_uri: list, category_name: list, model_spaces: list = None
+        self, embedding: list, input_uri: list, inference_class: list, model_spaces: list = None
     ):
         """
         Small wrapper around add() to log a batch of production embedding
@@ -137,12 +137,12 @@ class Mutant:
             embedding=embedding,
             input_uri=input_uri,
             dataset=["production"] * len(embedding),
-            category_name=category_name,
+            inference_class=inference_class,
             model_spaces=model_spaces,
         )
 
     def add_triage(
-        self, embedding: list, input_uri: list, category_name: list, model_spaces: list = None
+        self, embedding: list, input_uri: list, inference_class: list, model_spaces: list = None
     ):
         """
         Small wrapper around add() to log a batch of triage embedding
@@ -152,12 +152,12 @@ class Mutant:
             embedding=embedding,
             input_uri=input_uri,
             dataset=["triage"] * len(embedding),
-            category_name=category_name,
+            inference_class=inference_class,
             model_spaces=model_spaces,
         )
 
     def get_nearest_neighbors(
-        self, embedding, n_results=10, category_name=None, dataset="training", model_space=None
+        self, embedding, n_results=10, inference_class=None, dataset="training", model_space=None
     ):
         """
         Gets the nearest neighbors of a single embedding
@@ -172,7 +172,7 @@ class Mutant:
                     "model_space": model_space,
                     "embedding": embedding,
                     "n_results": n_results,
-                    "category_name": category_name,
+                    "category_name": inference_class,
                     "dataset": dataset,
                 }
             ),

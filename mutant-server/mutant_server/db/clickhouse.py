@@ -8,10 +8,10 @@ from clickhouse_driver import connect, Client
 EMBEDDING_TABLE_SCHEMA = [
     {"model_space": "String"},
     {"uuid": "UUID"},
-    {"embedding_data": "Array(Float64)"},
+    {"embedding": "Array(Float64)"},
     {"input_uri": "String"},
     {"dataset": "String"},
-    {"category_name": "String"},
+    {"inference_class": "String"},
 ]
 
 RESULTS_TABLE_SCHEMA = [
@@ -80,7 +80,7 @@ class Clickhouse(Database):
         input_uri,
         dataset=None,
         custom_quality_score=None,
-        category_name=None,
+        inference_class=None,
     ):
         data_to_insert = []
         for i in range(len(embedding)):
@@ -91,13 +91,13 @@ class Clickhouse(Database):
                     embedding[i],
                     input_uri[i],
                     dataset[i],
-                    category_name[i],
+                    inference_class[i],
                 ]
             )
 
         self._conn.execute(
             """
-        INSERT INTO embeddings (model_space, uuid, embedding, input_uri, dataset, category_name) VALUES """,
+        INSERT INTO embeddings (model_space, uuid, embedding, input_uri, dataset, inference_class) VALUES """,
             data_to_insert,
         )
 

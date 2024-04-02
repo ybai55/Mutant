@@ -54,17 +54,17 @@ if __name__ == "__main__":
         input_uri = batch['resource_uri'].tolist()
 
         # get category name from batch["infer"]
-        category_names = []
+        inference_classes = []
         for index, row in batch.iterrows():
             for idx, annotation in enumerate(row['infer']['annotations']):
-                category_names.append(annotation['category_name'])
+                inference_classes.append(annotation['category_name'])
 
         # log the batch
         mutant.add(
             embedding=embedding,
             input_uri=input_uri,
             dataset=dataset,
-            category_name=category_names
+            inference_class=inference_classes
         )
 
     allend = time.time()
