@@ -112,7 +112,7 @@ async def test_get_nearest_neighbors():
     async with AsyncClient(app=app, base_url=base_url) as ac:
         await ac.post("/api/v1/reset")
         await post_batch_records(ac)
-        await ac.post("/api/v1/process", params={"model_space": "test_space"})
+        await ac.post("/api/v1/create_index", params={"model_space": "test_space"})
         response = await ac.post(
             "/api/v1/get_nearest_neighbors", json={"embedding": [1.1, 2.3, 3.2], "n_results": 1,
                                                    "model_space": "test_space"}
@@ -126,7 +126,7 @@ async def test_get_nearest_neighbors_filter():
     async with AsyncClient(app=app, base_url=base_url) as ac:
         await ac.post("/api/v1/reset")
         await post_batch_records(ac)
-        await ac.post("/api/v1/process", json={"model_space": "test_space"})
+        await ac.post("/api/v1/create_index", json={"model_space": "test_space"})
         response = await ac.post(
             "/api/v1/get_nearest_neighbors",
             json={
@@ -146,7 +146,7 @@ async def test_process():
     async with AsyncClient(app=app, base_url=base_url) as ac:
         await ac.post("/api/v1/reset")
         await post_batch_records(ac)
-        response = await ac.post("/api/v1/process", json={"model_space": "test_space"})
+        response = await ac.post("/api/v1/create_index", json={"model_space": "test_space"})
     assert response.status_code == 200
     assert response.json() == {"response": "Processed space"}
 
