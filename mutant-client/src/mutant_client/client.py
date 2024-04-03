@@ -202,13 +202,6 @@ class Mutant:
         """Runs a raw SQL query against the database"""
         return requests.post(self._api_url + "/raw_sql", data=json.dumps({"raw_sql": sql})).json()
 
-    def calculate_results(self, model_space=None):
-        """Calculate the results for the given space key"""
-        return requests.post(
-            self._api_url + "/calculate_results",
-            data=json.dumps({"model_space": model_space or self._model_space}),
-        ).json()
-
     def get_results(self, model_space=None, n_results=100):
         """Gets results for the given space key"""
         return requests.post(
