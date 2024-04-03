@@ -111,18 +111,18 @@ async def add(new_embedding: AddEmbedding):
 async def fetch(embedding: FetchEmbedding):
     """
     Fetches embeddings from the database
-    - enables filtering by where_filter, sorting by key, and limiting the number of results
+    - enables filtering by where, sorting by key, and limiting the number of results
     """
-    return app._db.fetch(embedding.where_filter, embedding.sort, embedding.limit, embedding.offset)
+    return app._db.fetch(embedding.where, embedding.sort, embedding.limit, embedding.offset)
 
 
 @app.post("/api/v1/delete")
 async def delete(embedding: DeleteEmbedding):
     """
     Deletes embeddings from the database
-    - enables filtering by where_filter
+    - enables filtering by where
     """
-    return app._db.delete(embedding.where_filter)
+    return app._db.delete(embedding.where)
 
 
 @app.get("/api/v1/count")
@@ -152,15 +152,15 @@ async def get_nearest_neighbors(embedding: QueryEmbedding):
     """
     return the distance, database ids, and embedding themselves for the input embedding
     """
-    print('embedding.where_filter', embedding.where_filter)
-    if embedding.where_filter['model_space'] is None:
+    print('embedding.where', embedding.where)
+    if embedding.where['model_space'] is None:
         return {"error": "model_space is required"}
 
-    results = app._db.fetch(embedding.where_filter)
+    results = app._db.fetch(embedding.where)
     ids = [str(item[get_col_pos('uuid')]) for item in results]
 
     uuids, distances = app._ann_index.get_nearest_neighbors(
-        embedding.where_filter['model_space'], embedding.embedding, embedding.n_results, ids
+        embedding.where['model_space'], embedding.embedding, embedding.n_results, ids
     )
     return {
         "ids": uuids,
@@ -192,7 +192,7 @@ async def process(process_embedding: ProcessEmbedding):
     if mutant_mode == 'in-memory':
         raise Exception("in-memory mode does not process because it relies on celery and redis")
     fetch = app._db.fetch({"model_space": process_embedding.model_space}, columnar=True)
-    # print("process, where_filter", where_filter)
+    # print("process, where", where)
     mutant_telemetry.capture('created-index-run-process', {'n', len(fetch[2])})
     app._ann_index.run(process_embedding.model_space, fetch[1], fetch[2])  # more magic number, ugh
 
@@ -247,12 +247,3 @@ core.delete = delete
 core.get_nearest_neighbors = get_nearest_neighbors
 core.raw_sql = raw_sql
 core.create_index = create_index
-
-
-@app.get("/api/v1/model_spaces")
-async def get_model_spaces():
-    return app._db.get_model_spaces()
-
-@app.get("/api/v1/get_datasets")
-async def get_datasets(model_space: str):
-    return app._db.get_datasets(model_space)

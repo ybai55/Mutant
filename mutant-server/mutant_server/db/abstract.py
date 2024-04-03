@@ -24,7 +24,7 @@ class Database:
         pass
 
     @abstractmethod
-    def fetch(self, where_filter={}, sort=None, limit=None):
+    def fetch(self, where={}, sort=None, limit=None):
         pass
 
     @abstractmethod

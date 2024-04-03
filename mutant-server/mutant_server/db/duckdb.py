@@ -55,17 +55,17 @@ class DuckDB(Clickhouse):
         return self._count(model_space=model_space).fetchall()[0][0]
 
     # duckdb uses fetchall
-    def _fetch(self, where_filter={}, columnar=False):
-        val = self._conn.execute(f'''SELECT {db_schema_to_keys()} FROM embeddings {where_filter}''').fetchall()
+    def _fetch(self, where={}, columnar=False):
+        val = self._conn.execute(f'''SELECT {db_schema_to_keys()} FROM embeddings {where}''').fetchall()
         if columnar:
             val = list(zip(*val))
         return val
 
-    def _delete(self, where_filter={}):
+    def _delete(self, where={}):
         return self._conn.execute(f'''
             DELETE FROM
                 embeddings
-                {where_filter}''').fetchall()[0]
+                {where}''').fetchall()[0]
     # duckdb uses fetchdf, and replaces the nans with nones so they can be converted to json
     def get_by_ids(self, ids=list):
         # select from duckdb table where ids are in the list

@@ -50,31 +50,31 @@ class Mutant:
         x = requests.get(self._api_url + "/count", params=params)
         return x.json()
 
-    def fetch(self, where_filter={}, sort=None, limit=None, offset=None, page=None, page_size=None):
+    def fetch(self, where={}, sort=None, limit=None, offset=None, page=None, page_size=None):
         """
         Fetches embeddings from the database
         """
         if self._model_space:
-            where_filter["model_space"] = self._model_space
+            where["model_space"] = self._model_space
         if page and page_size:
             offset = (page - 1) * page_size
             limit = page_size
         return requests.post(
             self._api_url + "/fetch",
             data=json.dumps({
-                "where_filter": where_filter,
+                "where": where,
                 "sort": sort,
                 "limit": limit,
                 "offset": offset
             })).json()
 
-    def delete(self, where_filter={}):
+    def delete(self, where={}):
         """Deletes embeddings from the database"""
         if self._model_space:
-            where_filter["model_space"] = self._model_space
+            where["model_space"] = self._model_space
 
         return requests.post(self._api_url + "/delete", data=json.dumps({
-            "where_filter": where_filter,
+            "where": where,
         })).json()
 
     def add(
@@ -161,12 +161,12 @@ class Mutant:
             model_spaces=model_spaces
         )
 
-    def get_nearest_neighbors(self, embedding, n_results=10, where_filter={}):
+    def get_nearest_neighbors(self, embedding, n_results=10, where={}):
         """
         Gets the nearest neighbors of a single embedding
         """
-        if "model_space" not in where_filter:
-            where_filter['model_space'] = self._model_space
+        if "model_space" not in where:
+            where['model_space'] = self._model_space
 
         x = requests.post(
             self._api_url + "/get_nearest_neighbors",
@@ -174,7 +174,7 @@ class Mutant:
                 {
                     "embedding": embedding,
                     "n_results": n_results,
-                    "where_filter": where_filter
+                    "where": where
                 }
             )
         )
