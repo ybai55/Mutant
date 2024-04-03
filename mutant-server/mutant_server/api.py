@@ -237,6 +237,18 @@ async def get_results(results: Results):
     else:
         return app._db.return_results(results.model_space, results.n_results)
 
+# headless mode
+core = app
+core.add = add
+core.count = count
+core.fetch = fetch
+core.reset = reset
+core.delete = delete
+core.get_nearest_neighbors = get_nearest_neighbors
+core.raw_sql = raw_sql
+core.create_index = create_index
+
+
 @app.get("/api/v1/model_spaces")
 async def get_model_spaces():
     return app._db.get_model_spaces()
