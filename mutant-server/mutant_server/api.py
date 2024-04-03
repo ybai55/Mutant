@@ -3,6 +3,7 @@ import time
 from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse
 
+from examples.yolo import results
 from mutant_server.worker import heavy_offline_analysis
 
 from mutant_server.db.clickhouse import Clickhouse, get_col_pos
@@ -21,6 +22,8 @@ from mutant_server.types import (
 from mutant_server.utils.telemetry.capture import Capture
 from mutant_server.utils.error_reporting import init_error_reporting
 
+from fastapi.middleware.cors import CORSMiddleware
+
 mutant_telemetry = Capture()
 mutant_telemetry.capture('server-start')
 init_error_reporting()
@@ -32,6 +35,11 @@ db = Clickhouse
 ann_index = Hnswlib
 
 app = FastAPI(debug=True)
+
+# enables CORS
+app.add_middleware(
+    CORSMiddleware, allow_headers=["*"], allow_origins=["http://localhost:3000"], allow_methods=["*"]
+)
 
 # init db and index
 app._db = db()
@@ -212,3 +220,11 @@ async def get_results(results: Results):
 
     else:
         return app._db.return_results(results.model_space, results.n_results)
+
+@app.get("/api/v1/model_spaces")
+async def get_model_spaces():
+    return app._db.get_model_spaces()
+
+@app.get("/api/v1/get_datasets")
+async def get_datasets(model_space: str):
+    return app._db.get_datasets(model_space)

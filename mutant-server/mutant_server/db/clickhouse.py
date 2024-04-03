@@ -240,3 +240,13 @@ class Clickhouse(Database):
             LIMIT {n_results}
         """
         )
+
+    def get_model_spaces(self):
+        return self._conn.execute(f'''
+            SELECT DISTINCT model_space FROM embeddings
+        ''')[0]
+
+    def get_datasets(self, model_space):
+        return self._conn.execute(f'''
+            SELECT DISTINCT dataset FROM embeddings WHERE model_space = '{model_space}'
+        ''')[0]
