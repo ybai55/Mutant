@@ -30,7 +30,7 @@ services:
     build:
       context: ./mutant-server
       dockerfile: DockerfileCelery
-    command: celery worker --app=worker.celery --loglevel=info
+    command: celery worker --app=mutant_server.worker.celery --loglevel=info
     volumes:
       - ./mutant-server/:/mutant-server/
       - index_data:/index_data

@@ -3,10 +3,10 @@ import pandas as pd
 from mutant_client import Mutant
 
 mutant = Mutant()
+mutant.reset()
+mutant.set_model_space("sample_1_1")
 
 print(mutant.heartbeat())
-
-mutant.set_context("sample", "1", "1")
 
 mutant.add([[1,2,3,4,5]], ["/images/1"], ["training"], ['spoon'])
 mutant.add([[1,2,3,4,5]], ["/images/2"], ["training"], ['spoon'])
@@ -15,15 +15,13 @@ mutant.add([[1,2,3,4,5]], ["/images/1"], ["training"], ['knife'])
 mutant.add([[1,2,3,4,5]], ["/images/4"], ["training"], ['knife'])
 mutant.add([[1,2,3,4,5]], ["/prod/2"], ["test"], ['knife'])
 
-mutant.process()
-
-task = mutant.calculate_results("sample_1_1")
-print(task)
-print(mutant.get_task_status(task['task_id']))
+process_task = mutant.process()
+print(process_task)
+print(mutant.get_task_status(process_task['task_id']))
 
 print("sleeping for 10s to wait for task to complete")
 time.sleep(10)
-print(mutant.get_task_status(task['task_id']))
+print(mutant.get_task_status(process_task['task_id']))
 print(mutant.get_results())
 
 # knife_embedding = [0.2310010939836502, -0.3462161719799042, 0.29164767265319824, -0.09828940033912659,
