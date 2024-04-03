@@ -23,4 +23,4 @@ FROM mutant_server AS mutant_server_test
 COPY ./requirements_dev.txt requirements_dev.txt
 RUN pip install --no-cache-dir --upgrade -r requirements_dev.txt
 
-CMD ["python", "-m", "pytest"]
+CMD ["sh", "run_tests.sh"]

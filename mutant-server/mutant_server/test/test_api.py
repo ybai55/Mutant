@@ -152,3 +152,13 @@ async def test_process():
     assert response.status_code == 200
     assert response.json() == {"response": "Processed space"}
 
+@pytest.mark.anyio
+async def test_delete():
+    async with AsyncClient(app=app, base_url=base_url) as ac:
+        await ac.post("/api/v1/reset")
+        await post_batch_records(ac)
+        response = await ac.post("/api/v1/count", params={"model_space": "test_space"})
+        assert response.json() == {"count": 2}
+        response = await ac.post("/api/v1/delete", json={"where_filter":{"model_space": "test_space"}})
+        response = await ac.post("/api/v1/count", params={"model_space": "test_space"})
+        assert response.json() == {"count": 0}

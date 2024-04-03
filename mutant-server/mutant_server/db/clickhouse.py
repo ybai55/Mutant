@@ -149,6 +149,12 @@ class Clickhouse(Database):
         print(f"time to fetch {len(val)} embeddings: ", time.time() - s3)
         return val
 
+    def _delete(self, where_filter={}):
+        return self._conn.execute(f'''
+            DELETE FROM
+                embeddings
+                {where_filter}''')
+
     def delete(self, where_filter={}):
         if where_filter["model_space"] is None:
             return {"error": "model_space is required. Use reset to clear the entire database"}
@@ -168,10 +174,7 @@ class Clickhouse(Database):
 
         if where_filter:
             where_filter = f"WHERE {where_filter}"
-        val = self._conn.execute(f'''
-            DELETE FROM
-                embeddings
-            {where_filter}''')
+        val = self._delete(where_filter=where_filter)
         print(f"time to fetch {len(val)} embeddings: ", time.time() - s3)
 
         return val
