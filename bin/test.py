@@ -13,6 +13,9 @@ mutant.log(
     ['spoon', 'knife', 'fork']
 )
 
+print("count")
+print(mutant.count())
+
 print("Generating the index")
 print(mutant.create_index())
 

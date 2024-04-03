@@ -101,14 +101,17 @@ class Clickhouse(Database):
         insert_string = "model_space, uuid, embedding, input_uri, dataset, inference_class, label_class"
         self._conn.execute(f'''INSERT INTO embeddings ({insert_string}) VALUES ''', data_to_insert)
 
-    def count(self, model_space=None):
+    def _count(self, model_space=None):
         where_string = ""
         if model_space is not None:
             where_string = f"WHERE model_space = '{model_space}'"
-        return self._conn.execute(f"SELECT COUNT() FROM embeddings WHERE {where_string}")[0][0]
+        return self._conn.execute(f"SELECT COUNT() FROM embeddings WHERE {where_string}")
 
-    def update(self, data):
-        pass
+    def count(self, model_space=None):
+        return self._count(model_space)[0][0]
+
+    def _fetch(self, where_filter={}, columnar=False):
+        return self._conn.execute(f'''SELECT {db_schema_to_keys()} FROM embeddings {where_filter}''', columnar=columnar)
 
     def fetch(self, where_filter={}, sort=None, limit=None, offset=None, columnar=False):
         if where_filter["model_space"] is None:
@@ -142,16 +145,7 @@ class Clickhouse(Database):
             where_filter += f" OFFSET {offset}"
         # print("where_filter", where_filter)
 
-        val = self._conn.execute(
-            f"""
-            SELECT 
-                {db_schema_to_keys()}
-            FROM
-                embeddings
-        {where_filter}    
-        """,
-            columnar=columnar,
-        )
+        val = self._fetch(where_filter=where_filter, columnar=columnar)
         print(f"time to fetch {len(val)} embeddings: ", time.time() - s3)
         return val
 
