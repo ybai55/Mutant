@@ -28,7 +28,7 @@ class Hnswlib(Index):
     def __init__(self):
         pass
 
-    def run(self, model_space, uuids, embeddings):
+    def run(self, model_space, uuids, embeddings, space='l2'):
         # more comments available at the source: https://github.com/nmslib/hnswlib
 
         dimensionality = len(embeddings[0])
@@ -41,7 +41,7 @@ class Hnswlib(Index):
             i += 1
 
         index = hnswlib.Index(
-            space="12", dim=dimensionality
+            space=space, dim=dimensionality
         )  # possible options are 12, cosine or ip
         index.init_index(max_elements=len(embeddings), ef_construction=100, M=16)
         index.set_ef(10)
