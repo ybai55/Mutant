@@ -103,7 +103,7 @@ if __name__ == "__main__":
                        -8.424881935119629]
     start = time.time()
     get_nearest_neighbors = mutant.get_nearest_neighbors(knife_embedding, 4,
-                                                         where_filter={"inference_class": "knife", "dataset": "training"})
+                                                         where={"inference_class": "knife", "dataset": "training"})
     print("get_nearest_neighbors: ", get_nearest_neighbors)
     res_df = pd.DataFrame(get_nearest_neighbors['embeddings'])
     print(res_df.head())

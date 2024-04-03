@@ -13,7 +13,7 @@ class AddEmbedding(BaseModel):
 
 
 class QueryEmbedding(BaseModel):
-    where_filter: str = None
+    where: str = None
     embedding: list
     n_results: int = 10
 
@@ -23,7 +23,7 @@ class ProcessEmbedding(BaseModel):
 
 
 class FetchEmbedding(BaseModel):
-    where_filter: dict = {}
+    where: dict = {}
     sort: str = None
     limit: int = None
     offset: int = None
@@ -47,4 +47,4 @@ class SpaceKeyInput(BaseModel):
 
 
 class DeleteEmbedding(BaseModel):
-    where_filter: dict = {}
+    where: dict = {}
