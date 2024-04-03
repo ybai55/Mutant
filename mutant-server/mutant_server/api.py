@@ -1,27 +1,19 @@
 import time
 
-from fastapi import FastAPI, status
-from fastapi.responses import JSONResponse
-
 from examples.yolo import results
 from mutant_server.worker import heavy_offline_analysis
 
 from mutant_server.db.clickhouse import Clickhouse, get_col_pos
 from mutant_server.index.hnswlib import Hnswlib
-from mutant_server.types import (
-    AddEmbedding,
-    QueryEmbedding,
-    ProcessEmbedding,
-    FetchEmbedding,
-    CountEmbedding,
-    RawSql,
-    Results,
-    SpaceKeyInput,
-    DeleteEmbedding
-)
-from mutant_server.utils.telemetry.capture import Capture
+from mutant_server.types import ( AddEmbedding, CountEmbedding, DeleteEmbedding,
+                                  FetchEmbedding, ProcessEmbedding,
+                                  QueryEmbedding, RawSql, Results,
+                                  SpaceKeyInput)
 from mutant_server.utils.error_reporting import init_error_reporting
-
+from mutant_server.utils.telemetry.capture import Capture
+from mutant_server.worker import heavy_offline_analysis
+from fastapi import FastAPI, status
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 mutant_telemetry = Capture()

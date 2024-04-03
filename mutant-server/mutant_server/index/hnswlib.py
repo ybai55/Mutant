@@ -1,8 +1,8 @@
-import hnswlib
+import os
 import pickle
 import time
-import os
-import numpy as np
+
+import hnswlib
 from mutant_server.index.abstract import Index
 from mutant_server.logger import logger
 
@@ -18,10 +18,6 @@ class Hnswlib(Index):
         "time_created": None,
     }
 
-    # these data structures enable us to map between uuids and ids
-    # - our uuids are strings (clickhouse doesnt do autoincrementing ids for performance)
-    # - but hnswlib uses integers only as ids
-    # - so this is a bandaid.
     _id_to_uuid = {}
     _uuid_to_id = {}
 
@@ -31,25 +27,21 @@ class Hnswlib(Index):
     def set_save_folder(self, save_folder):
         self._save_folder = save_folder
 
-    def run(self, model_space, uuids, embeddings, space='l2'):
+    def run(self, model_space, uuids, embeddings, space='l2', ef=10, num_threads=4):
         # more comments available at the source: https://github.com/nmslib/hnswlib
-
         dimensionality = len(embeddings[0])
-        ids = []
-        i = 0
-        for uuid in uuids:
-            ids.append(i)
+
+        for uuid, i in zip(uuids, range(len(uuids))):
             self._id_to_uuid[i] = str(uuid)
             self._uuid_to_id[str(uuid)] = i
-            i += 1
 
         index = hnswlib.Index(
             space=space, dim=dimensionality
         )  # possible options are 12, cosine or ip
         index.init_index(max_elements=len(embeddings), ef_construction=100, M=16)
-        index.set_ef(10)
-        index.set_num_threads(4)
-        index.add_items(embeddings, ids)
+        index.set_ef(ef)
+        index.set_num_threads(num_threads)
+        index.add_items(embeddings, range(len(uuids)))
 
         self._index = index
         self._model_space = model_space
@@ -107,32 +99,22 @@ class Hnswlib(Index):
             self.load(model_space)
         s2 = time.time()
         # get ids from uuids
-        ids = []
-        if uuids is not None:
-            for uuid in uuids:
-                ids.append(self._uuid_to_id[uuid])
-
+        ids = {self._uuid_to_id[uuid] for uuid in uuids}
         filter_function = None
-        # if uuids is not an empty array
-        if uuids is not None:
-            if ids is not None:
-                filter_function = lambda id: id in ids
+        if len(ids) != 0:
+            filter_function = lambda id: id in ids
 
-        if not uuids is None:
-            if len(ids) < k:  # and len(uuids) > 0:
-                k = len(ids)
-        print("time to pre process our knn query: ", time.time() - s2)
-
-        print("query, k, filter_function ", query, k, filter_function)
+        # If the number of id's is less than k, only request len(id) nearest neighbors
+        if len(ids) < k:
+            k = len(ids)
+        logger.debug(f'time to pre process our knn query: {time.time() - s2}')
 
         s3 = time.time()
         database_ids, distances = self._index.knn_query(query, k=k, filter=filter_function)
-        print("time to run knn query: ", time.time() - s3)
+        logger.debug(f"time to run knn query: {time.time() - s3}")
         # get uuids from ids
-        uuids = []
-        if uuids is not None:
-            for id in database_ids[0]:
-                uuids.append(self._id_to_uuid[id])
+        uuids = [self._id_to_uuid[id] for id in database_ids[0]]
+
         return uuids, distances
 
     def reset(self):
