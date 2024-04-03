@@ -1,9 +1,9 @@
 import time
+import os
 
-from examples.yolo import results
-from mutant_server.worker import heavy_offline_analysis
 
 from mutant_server.db.clickhouse import Clickhouse, get_col_pos
+from mutant_server.db.duckdb import DuckDB
 from mutant_server.index.hnswlib import Hnswlib
 from mutant_server.types import ( AddEmbedding, CountEmbedding, DeleteEmbedding,
                                   FetchEmbedding, ProcessEmbedding,
@@ -22,6 +22,13 @@ init_error_reporting()
 
 from celery.result import AsyncResult
 
+# current valid modes are 'in-memory' and 'docker', it defaults to docker
+mutant_mode = os.getenv('MUTANT_MODE', 'docker')
+if mutant_mode == 'in-memory':
+    db = DuckDB
+else:
+    db = Clickhouse
+
 # Boot script
 db = Clickhouse
 ann_index = Hnswlib
@@ -37,6 +44,13 @@ app.add_middleware(
 app._db = db()
 app._ann_index = ann_index()
 
+def create_index_data_dir():
+    if not os.path.exists(os.getcwd() + '/index_data'):
+        os.mkdir(os.getcwd() + '/index_data')
+    app._ann_index.set_save_folder(os.getcwd() + '/index_data')
+
+if mutant_mode == 'in-memory':
+    create_index_data_dir()
 
 # scoping
 # an embedding space is specific to particular trained model and layer
@@ -127,6 +141,9 @@ async def reset():
     app._db = db()
     app._db.reset()
     app._ann_index = ann_index()
+    app._ann_index.reset()
+    if mutant_mode == 'in-memory':
+        create_index_data_dir()
     return True
 
 
@@ -172,6 +189,8 @@ async def process(process_embedding: ProcessEmbedding):
     """
     Currently generates an index for the embedding db
     """
+    if mutant_mode == 'in-memory':
+        raise Exception("in-memory mode does not process because it relies on celery and redis")
     fetch = app._db.fetch({"model_space": process_embedding.model_space}, columnar=True)
     # print("process, where_filter", where_filter)
     mutant_telemetry.capture('created-index-run-process', {'n', len(fetch[2])})
@@ -183,6 +202,9 @@ async def process(process_embedding: ProcessEmbedding):
 
 @app.post("/api/v1/tasks/{task_id}")
 async def get_status(task_id):
+    if mutant_mode == 'in-memory':
+        raise Exception("in-memory mode does not process because it relies on celery and redis")
+
     task_result = AsyncResult(task_id)
     result = {
         "task_id": task_id,
@@ -193,6 +215,8 @@ async def get_status(task_id):
 
 @app.post("/api/v1/get_results")
 async def get_results(results: Results):
+    if mutant_mode == 'in-memory':
+        raise Exception("in-memory mode does not process because it relies on celery and redis")
 
     # if there is no index, generate one
     if not app._ann_index.has_index(results.model_space):

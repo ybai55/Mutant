@@ -10,7 +10,7 @@ import pandas as pd
 
 if __name__ == "__main__":
 
-    file = '../data__nogit/yolov3_objects_large.parquet'
+    file = '../data__nogit/yolov3_objects_large_5k.parquet'
 
     print("Loading parquet file:", file)
     py = pq.read_table(file)
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     start = time.time()
 
     dataset = "training"
-    BATCH_SIZE = 100_000
+    BATCH_SIZE = 1_000
 
     print(f"Loading in records with a batch size of: {data_length}")
 
@@ -102,7 +102,9 @@ if __name__ == "__main__":
                        -14.4693603515625, -5.0566205978393555, -15.685358047485352, -12.493011474609375,
                        -8.424881935119629]
     start = time.time()
-    get_nearest_neighbors = mutant.get_nearest_neighbors(knife_embedding, 4, "knife", "training")
+    get_nearest_neighbors = mutant.get_nearest_neighbors(knife_embedding, 4,
+                                                         where_filter={"inference_class": "knife", "dataset": "training"})
+    print("get_nearest_neighbors: ", get_nearest_neighbors)
     res_df = pd.DataFrame(get_nearest_neighbors['embeddings'])
     print(res_df.head())
 
