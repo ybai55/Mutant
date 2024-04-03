@@ -37,7 +37,7 @@ async def post_batch_records_minimal(ac):
             "input_uri": ["https://example.com", "https://example.com"],
             "dataset": "training",
             "inference_class": ["person", "person"],
-            "model_space": "test_space"
+            "model_space": "test_space",
         },  # label_class left off on purpose
     )
 
@@ -114,8 +114,12 @@ async def test_get_nearest_neighbors():
         await post_batch_records(ac)
         await ac.post("/api/v1/create_index", params={"model_space": "test_space"})
         response = await ac.post(
-            "/api/v1/get_nearest_neighbors", json={"embedding": [1.1, 2.3, 3.2], "n_results": 1,
-                                                   "where":{"model_space": "test_space"}}
+            "/api/v1/get_nearest_neighbors",
+            json={
+                "embedding": [1.1, 2.3, 3.2],
+                "n_results": 1,
+                "where": {"model_space": "test_space"},
+            },
         )
     assert response.status_code == 200
     assert len(response.json()["ids"]) == 1
@@ -132,11 +136,11 @@ async def test_get_nearest_neighbors_filter():
             json={
                 "embedding": [1.1, 2.3, 3.2],
                 "n_results": 1,
-                "where":{
+                "where": {
                     "dataset": "training",
                     "inference_class": "monkey",
                     "model_space": "test_space",
-                }
+                },
             },
         )
     assert response.status_code == 200
@@ -152,6 +156,7 @@ async def test_process():
     assert response.status_code == 200
     assert response.json() == {"response": "Processed space"}
 
+
 @pytest.mark.anyio
 async def test_delete():
     async with AsyncClient(app=app, base_url=base_url) as ac:
@@ -159,6 +164,6 @@ async def test_delete():
         await post_batch_records(ac)
         response = await ac.post("/api/v1/count", params={"model_space": "test_space"})
         assert response.json() == {"count": 2}
-        response = await ac.post("/api/v1/delete", json={"where":{"model_space": "test_space"}})
+        response = await ac.post("/api/v1/delete", json={"where": {"model_space": "test_space"}})
         response = await ac.post("/api/v1/count", params={"model_space": "test_space"})
         assert response.json() == {"count": 0}

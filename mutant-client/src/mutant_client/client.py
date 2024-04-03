@@ -61,21 +61,22 @@ class Mutant:
             limit = page_size
         return requests.post(
             self._api_url + "/fetch",
-            data=json.dumps({
-                "where": where,
-                "sort": sort,
-                "limit": limit,
-                "offset": offset
-            })).json()
+            data=json.dumps({"where": where, "sort": sort, "limit": limit, "offset": offset}),
+        ).json()
 
     def delete(self, where={}):
         """Deletes embeddings from the database"""
         if self._model_space:
             where["model_space"] = self._model_space
 
-        return requests.post(self._api_url + "/delete", data=json.dumps({
-            "where": where,
-        })).json()
+        return requests.post(
+            self._api_url + "/delete",
+            data=json.dumps(
+                {
+                    "where": where,
+                }
+            ),
+        ).json()
 
     def add(
         self,
@@ -103,7 +104,7 @@ class Mutant:
                     "input_uri": input_uri,
                     "dataset": dataset,
                     "inference_class": inference_class,
-                    "label_class": label_class
+                    "label_class": label_class,
                 }
             ),
         )
@@ -114,7 +115,12 @@ class Mutant:
             return False
 
     def add_training(
-        self, embedding: list, input_uri: list, inference_class: list, label_class: list = None, model_spaces: list = None
+        self,
+        embedding: list,
+        input_uri: list,
+        inference_class: list,
+        label_class: list = None,
+        model_spaces: list = None,
     ):
         """
         Small wrapper around add() to log a batch of training embedding
@@ -126,11 +132,16 @@ class Mutant:
             dataset=["training"] * len(embedding),
             inference_class=inference_class,
             label_class=label_class,
-            model_spaces=model_spaces
+            model_spaces=model_spaces,
         )
 
     def add_production(
-        self, embedding: list, input_uri: list, inference_class: list,label_class: list = None, model_spaces: list = None
+        self,
+        embedding: list,
+        input_uri: list,
+        inference_class: list,
+        label_class: list = None,
+        model_spaces: list = None,
     ):
         """
         Small wrapper around add() to log a batch of production embedding
@@ -141,12 +152,17 @@ class Mutant:
             input_uri=input_uri,
             dataset=["production"] * len(embedding),
             inference_class=inference_class,
-            label_class= label_class,
-            model_spaces=model_spaces
+            label_class=label_class,
+            model_spaces=model_spaces,
         )
 
     def add_triage(
-        self, embedding: list, input_uri: list, inference_class: list,label_class: list = None, model_spaces: list = None
+        self,
+        embedding: list,
+        input_uri: list,
+        inference_class: list,
+        label_class: list = None,
+        model_spaces: list = None,
     ):
         """
         Small wrapper around add() to log a batch of triage embedding
@@ -158,7 +174,7 @@ class Mutant:
             dataset=["triage"] * len(embedding),
             inference_class=inference_class,
             label_class=label_class,
-            model_spaces=model_spaces
+            model_spaces=model_spaces,
         )
 
     def get_nearest_neighbors(self, embedding, n_results=10, where={}):
@@ -166,17 +182,11 @@ class Mutant:
         Gets the nearest neighbors of a single embedding
         """
         if "model_space" not in where:
-            where['model_space'] = self._model_space
+            where["model_space"] = self._model_space
 
         x = requests.post(
             self._api_url + "/get_nearest_neighbors",
-            data=json.dumps(
-                {
-                    "embedding": embedding,
-                    "n_results": n_results,
-                    "where": where
-                }
-            )
+            data=json.dumps({"embedding": embedding, "n_results": n_results, "where": where}),
         )
 
         if x.status_code == 200:
@@ -190,7 +200,8 @@ class Mutant:
         - currently this only runs hnswlib, doesn't return anything
         """
         x = requests.post(
-            self._api_url + "/process", data=json.dumps({"model_space": model_space or self._model_space})
+            self._api_url + "/process",
+            data=json.dumps({"model_space": model_space or self._model_space}),
         )
         return x.json()
 
@@ -206,7 +217,9 @@ class Mutant:
         """Gets results for the given space key"""
         return requests.post(
             self._api_url + "/get_results",
-            data=json.dumps({"model_space": model_space or self._model_space, "n_results": n_results}),
+            data=json.dumps(
+                {"model_space": model_space or self._model_space, "n_results": n_results}
+            ),
         ).json()
 
     def get_task_status(self, task_id):
@@ -214,6 +227,8 @@ class Mutant:
         return requests.post(self._api_url + f"/tasks/{task_id}").json()
 
     def create_index(self, model_space=None):
-        """Creates an index for the given model_space """
-        return requests.post(self._api_url + '/create_index',
-                             data=json.dumps({"model_space":model_space or self._model_space})).json()
+        """Creates an index for the given model_space"""
+        return requests.post(
+            self._api_url + "/create_index",
+            data=json.dumps({"model_space": model_space or self._model_space}),
+        ).json()

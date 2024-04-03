@@ -34,6 +34,6 @@ class Capture(Telemetry):
     def capture(self, event, properties=None):
         if properties is None:
             properties = {}
-        properties['environment'] = os.getenv('environment', 'development')
+        properties["environment"] = os.getenv("environment", "development")
 
         self._conn.capture(self._telemetry_anonymized_uuid, event, properties)

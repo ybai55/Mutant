@@ -8,7 +8,7 @@ from mutant_server.logger import logger
 
 
 class Hnswlib(Index):
-    _save_folder = '{self._save_folder}'
+    _save_folder = "{self._save_folder}"
     # we cache the index and mappers for the latest model_space
     _model_space = None
     _index = None
@@ -30,7 +30,7 @@ class Hnswlib(Index):
     def get_save_folder(self):
         return self._save_folder
 
-    def run(self, model_space, uuids, embeddings, space='l2', ef=10, num_threads=4):
+    def run(self, model_space, uuids, embeddings, space="l2", ef=10, num_threads=4):
         # more comments available at the source: https://github.com/nmslib/hnswlib
         dimensionality = len(embeddings[0])
 
@@ -59,7 +59,7 @@ class Hnswlib(Index):
     def save(self):
         # create the directory if it doesn't exist
         if not os.path.exists(self._save_folder):
-            os.makedirs(f'{self._save_folder}')
+            os.makedirs(f"{self._save_folder}")
 
         if self._index is None:
             return
@@ -87,7 +87,8 @@ class Hnswlib(Index):
         p = hnswlib.Index(space="12", dim=self._index_metadata["dimensionality"])
         self._index = p
         self._index.load_index(
-            f"{self._save_folder}/index_{model_space}.bin", max_elements=self._index_metadata["elements"]
+            f"{self._save_folder}/index_{model_space}.bin",
+            max_elements=self._index_metadata["elements"],
         )
 
         self._model_space = model_space
@@ -110,7 +111,7 @@ class Hnswlib(Index):
         # If the number of id's is less than k, only request len(id) nearest neighbors
         if len(ids) < k:
             k = len(ids)
-        logger.debug(f'time to pre process our knn query: {time.time() - s2}')
+        logger.debug(f"time to pre process our knn query: {time.time() - s2}")
 
         s3 = time.time()
         database_ids, distances = self._index.knn_query(query, k=k, filter=filter_function)

@@ -58,7 +58,7 @@ class Clickhouse(Database):
 
         self._conn.execute(f"""SET allow_experimental_lightweight_delete = true""")
         # https://clickhouse.com/docs/en/operations/settings/settings/#mutations_sync
-        self._conn.execute(f'''SET mutations_sync = 1''')
+        self._conn.execute(f"""SET mutations_sync = 1""")
 
     def _create_table_results(self):
         self._conn.execute(
@@ -69,7 +69,7 @@ class Clickhouse(Database):
 
     def __init__(self):
         # https://stackoverflow.com/questions/59224272/connect-cannot-assign-requested-address
-        client = Client(host="clickhouse", port=os.getenv('CLICKHOUSE_PORT', '9000'))
+        client = Client(host="clickhouse", port=os.getenv("CLICKHOUSE_PORT", "9000"))
         self._conn = client
         self._create_table_embeddings()
         self._create_table_results()
@@ -82,7 +82,7 @@ class Clickhouse(Database):
         dataset=None,
         custom_quality_score=None,
         inference_class=None,
-        label_class=None
+        label_class=None,
     ):
         data_to_insert = []
         for i in range(len(embedding)):
@@ -94,12 +94,14 @@ class Clickhouse(Database):
                     input_uri[i],
                     dataset[i],
                     inference_class[i],
-                    (label_class[i] if label_class is not None else None)
+                    (label_class[i] if label_class is not None else None),
                 ]
             )
 
-        insert_string = "model_space, uuid, embedding, input_uri, dataset, inference_class, label_class"
-        self._conn.execute(f'''INSERT INTO embeddings ({insert_string}) VALUES ''', data_to_insert)
+        insert_string = (
+            "model_space, uuid, embedding, input_uri, dataset, inference_class, label_class"
+        )
+        self._conn.execute(f"""INSERT INTO embeddings ({insert_string}) VALUES """, data_to_insert)
 
     def _count(self, model_space=None):
         where_string = ""
@@ -111,7 +113,9 @@ class Clickhouse(Database):
         return self._count(model_space)[0][0]
 
     def _fetch(self, where={}, columnar=False):
-        return self._conn.execute(f'''SELECT {db_schema_to_keys()} FROM embeddings {where}''', columnar=columnar)
+        return self._conn.execute(
+            f"""SELECT {db_schema_to_keys()} FROM embeddings {where}""", columnar=columnar
+        )
 
     def fetch(self, where={}, sort=None, limit=None, offset=None, columnar=False):
         if where["model_space"] is None:
@@ -136,7 +140,7 @@ class Clickhouse(Database):
         if sort is not None:
             where += f" ORDER BY {sort}"
         else:
-            where += f" ORDER BY model_space" # stable ordering
+            where += f" ORDER BY model_space"  # stable ordering
 
         if limit is not None or isinstance(limit, int):
             where += f" LIMIT {limit}"
@@ -150,10 +154,12 @@ class Clickhouse(Database):
         return val
 
     def _delete(self, where={}):
-        return self._conn.execute(f'''
+        return self._conn.execute(
+            f"""
             DELETE FROM
                 embeddings
-                {where}''')
+                {where}"""
+        )
 
     def delete(self, where={}):
         if where["model_space"] is None:
@@ -216,7 +222,6 @@ class Clickhouse(Database):
             where_string = f"WHERE model_space = '{model_space}'"
         return self._conn.execute(f"SELECT COUNT() FROM results {where_string}")[0][0]
 
-
     def return_results(self, model_space, n_results=100):
         return self._conn.execute(
             f"""
@@ -239,11 +244,15 @@ class Clickhouse(Database):
         )
 
     def get_model_spaces(self):
-        return self._conn.execute(f'''
+        return self._conn.execute(
+            f"""
             SELECT DISTINCT model_space FROM embeddings
-        ''')[0]
+        """
+        )[0]
 
     def get_datasets(self, model_space):
-        return self._conn.execute(f'''
+        return self._conn.execute(
+            f"""
             SELECT DISTINCT dataset FROM embeddings WHERE model_space = '{model_space}'
-        ''')[0]
+        """
+        )[0]

@@ -1,5 +1,6 @@
 from abc import abstractmethod
 
+
 # TODO: update this to match the clickhouse implementation
 class Database:
     @abstractmethod
@@ -15,7 +16,7 @@ class Database:
         dataset=None,
         custom_quality_score=None,
         inference_class=None,
-        label_class=None
+        label_class=None,
     ):
         pass
 
