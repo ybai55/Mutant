@@ -27,6 +27,9 @@ class Hnswlib(Index):
     def set_save_folder(self, save_folder):
         self._save_folder = save_folder
 
+    def get_save_folder(self):
+        return self._save_folder
+
     def run(self, model_space, uuids, embeddings, space='l2', ef=10, num_threads=4):
         # more comments available at the source: https://github.com/nmslib/hnswlib
         dimensionality = len(embeddings[0])
@@ -118,5 +121,6 @@ class Hnswlib(Index):
         return uuids, distances
 
     def reset(self):
-        for f in os.listdir("{self._save_folder}"):
-            os.remove(os.path.join("{self._save_folder}", f))
+        if os.path.exists(self._save_folder):
+            for f in os.listdir(f"{self._save_folder}"):
+                os.remove(os.path.join(f"{self._save_folder}", f))

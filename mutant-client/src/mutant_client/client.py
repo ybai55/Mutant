@@ -161,13 +161,11 @@ class Mutant:
             model_spaces=model_spaces
         )
 
-    def get_nearest_neighbors(
-        self, embedding, n_results=10, where_filter={}
-    ):
+    def get_nearest_neighbors(self, embedding, n_results=10, where_filter={}):
         """
         Gets the nearest neighbors of a single embedding
         """
-        if not where_filter['model_space']:
+        if "model_space" not in where_filter:
             where_filter['model_space'] = self._model_space
 
         x = requests.post(
@@ -221,3 +219,8 @@ class Mutant:
     def get_task_status(self, task_id):
         """Gets the status of a task"""
         return requests.post(self._api_url + f"/tasks/{task_id}").json()
+
+    def create_index(self, model_space=None):
+        """Creates an index for the given model_space """
+        return requests.post(self._api_url + '/create_index',
+                             data=json.dumps({"model_space":model_space or self._model_space})).json()
