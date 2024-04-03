@@ -8,7 +8,6 @@ from mutant_server.logger import logger
 
 
 class Hnswlib(Index):
-
     _save_folder = '{self._save_folder}'
     # we cache the index and mappers for the latest model_space
     _model_space = None
@@ -109,27 +108,31 @@ class Hnswlib(Index):
         s2 = time.time()
         # get ids from uuids
         ids = []
-        for uuid in uuids:
-            ids.append(self._uuid_to_id[uuid])
+        if uuids is not None:
+            for uuid in uuids:
+                ids.append(self._uuid_to_id[uuid])
 
         filter_function = None
         # if uuids is not an empty array
-        if len(ids) > 0:
-            filter_function = lambda id: id in ids
+        if uuids is not None:
+            if ids is not None:
+                filter_function = lambda id: id in ids
 
-        if len(ids) < k and len(ids) > 0:
-            k = len(ids)
+        if not uuids is None:
+            if len(ids) < k:  # and len(uuids) > 0:
+                k = len(ids)
         print("time to pre process our knn query: ", time.time() - s2)
 
-        print("filter_function: ", filter_function)
+        print("query, k, filter_function ", query, k, filter_function)
 
         s3 = time.time()
         database_ids, distances = self._index.knn_query(query, k=k, filter=filter_function)
         print("time to run knn query: ", time.time() - s3)
         # get uuids from ids
         uuids = []
-        for id in database_ids[0]:
-            uuids.append(self._id_to_uuid[id])
+        if uuids is not None:
+            for id in database_ids[0]:
+                uuids.append(self._id_to_uuid[id])
         return uuids, distances
 
     def reset(self):
