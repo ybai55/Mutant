@@ -14,7 +14,7 @@ mutant.log(
 )
 
 print("Generating the index")
-print(mutant.process())
+print(mutant.create_index())
 
 print("Running a nearest neighbor search")
 print(mutant.get_nearest_neighbors([1, 2, 3, 4, 5], 1))
