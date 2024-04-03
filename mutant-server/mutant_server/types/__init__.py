@@ -13,12 +13,9 @@ class AddEmbedding(BaseModel):
 
 
 class QueryEmbedding(BaseModel):
-    model_space: str = None
+    where_filter: str = None
     embedding: list
     n_results: int = 10
-    inference_class: str = None
-    label_class: str = None
-    dataset: str = None
 
 
 class ProcessEmbedding(BaseModel):

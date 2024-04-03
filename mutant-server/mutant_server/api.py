@@ -5,7 +5,7 @@ from fastapi.responses import JSONResponse
 
 from mutant_server.worker import heavy_offline_analysis
 
-from mutant_server.db.clickhouse import Clickhouse
+from mutant_server.db.clickhouse import Clickhouse, get_col_pos
 from mutant_server.index.hnswlib import Hnswlib
 from mutant_server.types import (
     AddEmbedding,
@@ -135,37 +135,20 @@ async def get_nearest_neighbors(embedding: QueryEmbedding):
     """
     return the distance, database ids, and embedding themselves for the input embedding
     """
-    if embedding.model_space is None:
+    print('embedding.where_filter', embedding.where_filter)
+    if embedding.where_filter['model_space'] is None:
         return {"error": "model_space is required"}
 
-    ids = None
+    results = app._db.fetch(embedding.where_filter)
+    ids = [str(item[get_col_pos('uuid')]) for item in results]
 
-    filter_by_where = {}
-    filter_by_where["model_space"] = embedding.model_space
-    if embedding.inference_class is not None:
-        filter_by_where["inference_class"] = embedding.inference_class
-    if embedding.label_class is not None:
-        filter_by_where["label_class"] = embedding.label_class
-    if embedding.dataset is not None:
-        filter_by_where["dataset"] = embedding.dataset
-
-    if filter_by_where is not None:
-        # print("app._db.fetch(filter_by_where)[uuid]")
-        results = app._db.fetch(filter_by_where)
-        # get the first element of each item in results
-        ids = [str(item[1]) for item in results]  # 1 is the uuid column
-        # ids = app._db.fetch(filter_by_where)["uuid"].tolist()
-
-    # nn = app._ann_index.get_nearest_neighbors(embedding.embedding, embedding.n_results, ids)
     uuids, distances = app._ann_index.get_nearest_neighbors(
-        embedding.model_space, embedding.embedding, embedding.n_results, ids
+        embedding.where_filter['model_space'], embedding.embedding, embedding.n_results, ids
     )
-    print("uuids", uuids)
-    print("distances", distances.tolist()[0])
     return {
         "ids": uuids,
         "embeddings": app._db.get_by_ids(uuids),
-        "distances": distances.tolist()[0],
+        "distances": distances.tolist()[0]
     }
 
 
