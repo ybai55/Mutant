@@ -10,19 +10,26 @@ from mutant_server.types import (ProcessEmbedding, AddEmbedding, FetchEmbedding,
                                  CountEmbedding, DeleteEmbedding, RawSql, Results, SpaceKeyInput)
 
 
-def create_index_data_dir():
-    if not os.path.exists(os.getcwd() + '/index_data'):
-        os.mkdir(os.getcwd() + '/index_data')
-    core._ann_index.set_save_folder(os.getcwd() + '/index_data')
-
 core = FastAPI(debug=True)
 core._db = DuckDB()
 core._ann_index = Hnswlib()
 
-create_index_data_dir()
-
 router = MutantRouter(app=core, db=DuckDB, ann_index=Hnswlib)
 core.include_router(router.router)
+
+def init(filesystem_location: str = None):
+    if filesystem_location is None:
+        filesystem_location = os.getcwd()
+
+    # create a dir
+    if not os.path.exists(filesystem_location + '/.mutant'):
+        os.makedirs(filesystem_location + '/.mutant')
+
+    if not os.path.exists(filesystem_location + '/.mutant/index_data'):
+        os.makedirs(filesystem_location + '/.mutant/index_data')
+
+    # specify where to save and load data from
+    core._db.set_save_folder(filesystem_location + '/.mutant')
 
 # headless mode
 core.heartbeat = router.root

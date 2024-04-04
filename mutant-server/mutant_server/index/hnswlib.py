@@ -8,8 +8,8 @@ from mutant_server.logger import logger
 
 
 class Hnswlib(Index):
+
     _save_folder = "{self._save_folder}"
-    # we cache the index and mappers for the latest model_space
     _model_space = None
     _index = None
     _index_metadata = {
@@ -24,6 +24,7 @@ class Hnswlib(Index):
     def __init__(self):
         pass
 
+    # set the save folder
     def set_save_folder(self, save_folder):
         self._save_folder = save_folder
 
@@ -38,9 +39,7 @@ class Hnswlib(Index):
             self._id_to_uuid[i] = str(uuid)
             self._uuid_to_id[str(uuid)] = i
 
-        index = hnswlib.Index(
-            space=space, dim=dimensionality
-        )  # possible options are 12, cosine or ip
+        index = hnswlib.Index(space=space, dim=dimensionality)  # possible options are 12, cosine or ip
         index.init_index(max_elements=len(embeddings), ef_construction=100, M=16)
         index.set_ef(ef)
         index.set_num_threads(num_threads)
@@ -53,6 +52,35 @@ class Hnswlib(Index):
             "elements": len(embeddings),
             "time_created": time.time(),
         }
+
+        self.save()
+
+    def delete(self, model_space):
+        # delete files, dont throw error if they dont exist
+        try:
+            os.remove(f"{self._save_folder}/id_to_uuid_{model_space}.pkl")
+            os.remove(f"{self._save_folder}/uuid_to_id_{model_space}.pkl")
+            os.remove(f"{self._save_folder}/index_metadata_{model_space}.pkl")
+            os.remove(f"{self._save_folder}/index_{model_space}.bin")
+        except:
+            pass
+
+        if self._model_space == model_space:
+            self._index = None
+            self._model_space = None
+            self._index_metadata = None
+            self._id_to_uuid = {}
+            self._uuid_to_id = {}
+
+    def delete_from_index(self, model_space, uuids):
+        if self._model_space != model_space:
+            self.load(model_space)
+
+        if self._index is not None:
+            for uuid in uuids:
+                self._index.mark_deleted(self._uuid_to_id[uuid])
+                del self._id_to_uuid[self._uuid_to_id[uuid]]
+                del self._uuid_to_id[uuid]
 
         self.save()
 
@@ -77,40 +105,43 @@ class Hnswlib(Index):
 
     def load(self, model_space):
         # unpickle the mappers
-        with open(f"{self._save_folder}/id_to_uuid_{model_space}.pkl", "rb") as f:
-            self._id_to_uuid = pickle.load(f)
-        with open(f"{self._save_folder}/uuid_to_id_{model_space}.pkl", "rb") as f:
-            self._uuid_to_id = pickle.load(f)
-        with open(f"{self._save_folder}/index_metadata_{model_space}.pkl", "rb") as f:
-            self._index_metadata = pickle.load(f)
+        try:
+            with open(f"{self._save_folder}/id_to_uuid_{model_space}.pkl", "rb") as f:
+                self._id_to_uuid = pickle.load(f)
+            with open(f"{self._save_folder}/uuid_to_id_{model_space}.pkl", "rb") as f:
+                self._uuid_to_id = pickle.load(f)
+            with open(f"{self._save_folder}/index_metadata_{model_space}.pkl", "rb") as f:
+                self._index_metadata = pickle.load(f)
+            p = hnswlib.Index(space="12", dim=self._index_metadata["dimensionality"])
+            self._index = p
+            self._index.load_index(f"{self._save_folder}/index_{model_space}.bin",
+                                   max_elements=self._index_metadata["elements"])
 
-        p = hnswlib.Index(space="12", dim=self._index_metadata["dimensionality"])
-        self._index = p
-        self._index.load_index(
-            f"{self._save_folder}/index_{model_space}.bin",
-            max_elements=self._index_metadata["elements"],
-        )
-
-        self._model_space = model_space
+            self._model_space = model_space
+        except:
+            logger.debug("Index not found")
 
     def has_index(self, model_space):
-        return os.path.isfile(f"{self._save_folder}/index_{model_space}")
+        return os.path.isfile(f"{self._save_folder}/index_{model_space}.bin")
 
     # do knn_query on hnswlib to get nearest neighbors
     def get_nearest_neighbors(self, model_space, query, k, uuids=None):
 
         if self._model_space != model_space:
             self.load(model_space)
+
         s2 = time.time()
-        # get ids from uuids
-        ids = {self._uuid_to_id[uuid] for uuid in uuids}
+        # get ids from uuids as a set, if they are available
+        ids = {}
+        if uuids is not None:
+            ids = {self._uuid_to_id[uuid] for uuid in uuids}
+            if len(ids) < k:
+                k = len(ids)
+
         filter_function = None
         if len(ids) != 0:
             filter_function = lambda id: id in ids
 
-        # If the number of id's is less than k, only request len(id) nearest neighbors
-        if len(ids) < k:
-            k = len(ids)
         logger.debug(f"time to pre process our knn query: {time.time() - s2}")
 
         s3 = time.time()
@@ -125,3 +156,6 @@ class Hnswlib(Index):
         if os.path.exists(self._save_folder):
             for f in os.listdir(f"{self._save_folder}"):
                 os.remove(os.path.join(f"{self._save_folder}", f))
+        #  recreate the directory
+        if not os.path.exists(f'{self._save_folder}'):
+            os.makedirs(f'{self._save_folder}')

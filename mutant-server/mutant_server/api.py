@@ -32,15 +32,31 @@ app._db = db()
 app._ann_index = ann_index
 
 
-def create_index_data_dir():
-    if not os.path.exists(os.getcwd() + "/index_data"):
-        os.makedirs(os.getcwd() + '/index_data')
-    app._ann_index.set_save_folder(os.getcwd() + '/index_data')
-
 if mutant_mode == 'in-memory':
-    create_index_data_dir()
+    filesystem_location = os.getcwd()
 
-router = MutantRouter(app=app, db=db(), ann_index=ann_index())
+    # create a dir
+    if not os.path.exists(filesystem_location + '/.mutant'):
+        os.makedirs(filesystem_location + '/.mutant')
+
+    if not os.path.exists(filesystem_location + '/.mutant/index_data'):
+        os.makedirs(filesystem_location + '/.mutant/index_data')
+
+    # specify where to save or load data from
+    app._db.set_save_folder(filesystem_location + '/.mutant')
+    app._ann_index.set_save_folder(filesystem_location + '/.mutant/index_data')
+
+    print("Initializing Mutant...")
+    print("Data will be saved to: " + filesystem_location + '/.mutant')
+
+    # if the db exists, load it
+    if os.path.exists(filesystem_location + '/.mutant/mutant.parquet'):
+        print(f"Existing database found at {filesystem_location + '/.mutant/mutant.parquet'}. Loading...")
+        app._db.load()
+
+
+
+router = MutantRouter(app=app, db=db, ann_index=ann_index)
 app.include_router(router.router)
 
 # enables CORS

@@ -50,22 +50,17 @@ class Clickhouse(Database):
     _conn = None
 
     def _create_table_embeddings(self):
-        self._conn.execute(
-            f"""CREATE TABLE IF NOT EXISTS embeddings (
-                {db_array_schema_to_clickhouse_schema(EMBEDDING_TABLE_SCHEMA)}
-            ) ENGINE = MergeTree() ORDER BY model_space"""
-        )
-
+        self._conn.execute(f"""CREATE TABLE IF NOT EXISTS embeddings (
+            {db_array_schema_to_clickhouse_schema(EMBEDDING_TABLE_SCHEMA)}
+        ) ENGINE = MergeTree() ORDER BY model_space""")
         self._conn.execute(f"""SET allow_experimental_lightweight_delete = true""")
         # https://clickhouse.com/docs/en/operations/settings/settings/#mutations_sync
         self._conn.execute(f"""SET mutations_sync = 1""")
 
     def _create_table_results(self):
-        self._conn.execute(
-            f"""CREATE TABLE IF NOT EXISTS results (
+        self._conn.execute(f"""CREATE TABLE IF NOT EXISTS results (
             {db_array_schema_to_clickhouse_schema(RESULTS_TABLE_SCHEMA)}
-        ) ENGINE = MergeTree() ORDER BY model_space"""
-        )
+        ) ENGINE = MergeTree() ORDER BY model_space""")
 
     def __init__(self):
         # https://stackoverflow.com/questions/59224272/connect-cannot-assign-requested-address
@@ -74,33 +69,14 @@ class Clickhouse(Database):
         self._create_table_embeddings()
         self._create_table_results()
 
-    def add(
-        self,
-        model_space,
-        embedding,
-        input_uri,
-        dataset=None,
-        custom_quality_score=None,
-        inference_class=None,
-        label_class=None,
-    ):
+    def add(self, model_space, embedding, input_uri, dataset=None, inference_class=None, label_class=None):
         data_to_insert = []
         for i in range(len(embedding)):
             data_to_insert.append(
-                [
-                    model_space[i],
-                    uuid.uuid4(),
-                    embedding[i],
-                    input_uri[i],
-                    dataset[i],
-                    inference_class[i],
-                    (label_class[i] if label_class is not None else None),
-                ]
-            )
+                [model_space[i], uuid.uuid4(), embedding[i], input_uri[i], dataset[i], inference_class[i],
+                    (label_class[i] if label_class is not None else None)])
 
-        insert_string = (
-            "model_space, uuid, embedding, input_uri, dataset, inference_class, label_class"
-        )
+        insert_string = "model_space, uuid, embedding, input_uri, dataset, inference_class, label_class"
         self._conn.execute(f"""INSERT INTO embeddings ({insert_string}) VALUES """, data_to_insert)
 
     def _count(self, model_space=None):
@@ -113,9 +89,7 @@ class Clickhouse(Database):
         return self._count(model_space)[0][0]
 
     def _fetch(self, where={}, columnar=False):
-        return self._conn.execute(
-            f"""SELECT {db_schema_to_keys()} FROM embeddings {where}""", columnar=columnar
-        )
+        return self._conn.execute(f"""SELECT {db_schema_to_keys()} FROM embeddings {where}""", columnar=columnar)
 
     def fetch(self, where={}, sort=None, limit=None, offset=None, columnar=False):
         if where["model_space"] is None:
@@ -154,12 +128,9 @@ class Clickhouse(Database):
         return val
 
     def _delete(self, where={}):
-        return self._conn.execute(
-            f"""
-            DELETE FROM
-                embeddings
-                {where}"""
-        )
+        uuids_deleted = self._conn.execute(f'''SELECT toString(uuid) FROM embeddings {where}''')
+        self._conn.execute(f"""DELETE FROM embeddings {where}""")
+        return uuids_deleted
 
     def delete(self, where={}):
         if where["model_space"] is None:
@@ -186,12 +157,7 @@ class Clickhouse(Database):
         return val
 
     def get_by_ids(self, ids=list):
-        # ids = "'" + "','".join([str(x) for x in ids]) + "'"
-        # print("id list", ids)
-        return self._conn.execute(
-            f"""
-            SELECT {db_schema_to_keys()} FROM embeddings WHERE uuid IN ({ids}) """
-        )
+        return self._conn.execute(f"""SELECT {db_schema_to_keys()} FROM embeddings WHERE uuid IN ({ids}) """)
 
     def reset(self):
         self._conn.execute("DROP TABLE IF EXISTS embeddings")
@@ -207,11 +173,8 @@ class Clickhouse(Database):
         for i in range(len(model_space)):
             data_to_insert.append([model_space[i], uuids[i], custom_quality_score[i]])
 
-        self._conn.execute(
-            """
-        INSERT INTO results (model_space, uuid, custom_quality_score) VALUES """,
-            data_to_insert,
-        )
+        self._conn.execute("""INSERT INTO results (model_space, uuid, custom_quality_score) VALUES """,
+                           data_to_insert)
 
     def delete_results(self, model_space):
         self._conn.execute(f"DELETE FROM results WHERE model_space = '{model_space}'")
@@ -223,8 +186,7 @@ class Clickhouse(Database):
         return self._conn.execute(f"SELECT COUNT() FROM results {where_string}")[0][0]
 
     def return_results(self, model_space, n_results=100):
-        return self._conn.execute(
-            f"""
+        return self._conn.execute(f"""
             SELECT 
                 embeddings.input_uri, 
                 embeddings.embedding,
@@ -240,19 +202,10 @@ class Clickhouse(Database):
             ORDER BY 
                 results.custom_quality_score DESC 
             LIMIT {n_results}
-        """
-        )
+        """)
 
-    def get_model_spaces(self):
-        return self._conn.execute(
-            f"""
-            SELECT DISTINCT model_space FROM embeddings
-        """
-        )[0]
+    def set_save_folder(self, path):
+        pass
 
-    def get_datasets(self, model_space):
-        return self._conn.execute(
-            f"""
-            SELECT DISTINCT dataset FROM embeddings WHERE model_space = '{model_space}'
-        """
-        )[0]
+    def get_save_folder(self):
+        pass
