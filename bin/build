@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+docker build . --target mutant_server -t ghcr.io/mutant/mutant-server:`bin/version`

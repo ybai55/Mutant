@@ -15,4 +15,6 @@ __pycache__
 index_data
 /index_data
 
-mutant_logs.log
+*.log
+
+venv
