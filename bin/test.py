@@ -1,3 +1,6 @@
+# Sanity check script to ensure that the Mutant client can connect
+# and is capable of recieving data.
+
 from mutant_client import Mutant
 
 mutant =Mutant()
