@@ -1,8 +1,38 @@
+[project]
+name = "mutant"
+dynamic = ["version"]
+
+authors = [
+    { name="Yang Bai", email="beck@hawk.iit.edu"}
+]
+description = "Mutant. Currently based on Chroma."
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache-2.0",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    'pyarrow ~= 9.0',
+    'requests ~= 2.28',
+]
+
 [tool.black]
 line-length = 100
-
-# Black will reuse to run if it's not this version.
-required-version = "22.6.0"
-
-# Ensure black's output will be compatible with all listed versions.
+required-version = "24.3.0" # Black will refuse to run if it's not this version.
 target-version = ['py36', 'py37', 'py38', 'py39', 'py310']
+
+[tool.pytest.init_options]
+pythonpath = ["."]
+
+[project.urls]
+"Homepage" = "https://github.com/ybai55/Mutant"
+"Bug Tracker" = "https://github.com/ybai55/Mutant/issues"
+
+[build-system]
+requires = ["setuptools>=61.0", "setuptools-scm[toml]>=6.2"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+local_scheme = "no-local-version"
