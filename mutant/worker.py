@@ -2,7 +2,8 @@ import os
 import time
 import random
 from celery import Celery
-from mutant.db.clickhouse import Clickhouse, get_col_pos
+
+import mutant
 
 celery = Celery(__name__)
 celery.conf.broker_url = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379")
@@ -17,8 +18,8 @@ def create_task(task_type):
 
 @celery.task(name="heavy_offline_analysis")
 def heavy_offline_analysis(model_space):
-    task_db_conn = Clickhouse()
-    embedding_rows = task_db_conn.fetch({"model_space": model_space})
+    db = mutant.get_db()
+    embedding_rows = db.fetch({"model_space": model_space})
 
     uuids = []
     custom_quality_scores = []
@@ -29,7 +30,7 @@ def heavy_offline_analysis(model_space):
 
     spaces = [model_space] * len(uuids)
 
-    task_db_conn.delete_results(model_space)
-    task_db_conn.add_results(spaces, uuids, custom_quality_scores)
+    db.delete_results(model_space)
+    db.add_results(spaces, uuids, custom_quality_scores)
 
     return "Wrote custom quality scores to database"

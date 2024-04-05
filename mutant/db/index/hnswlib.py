@@ -4,6 +4,7 @@ import time
 
 import hnswlib
 from mutant.db.index import Index
+from mutant.logger import logger
 
 
 class Hnswlib(Index):
@@ -26,7 +27,7 @@ class Hnswlib(Index):
 
         space = "l2"
         ef = 10
-        num_threads = "4"
+        num_threads = 4
 
         # more comments available at the source: https://github.com/nmslib/hnswlib
         dimensionality = len(embeddings[0])

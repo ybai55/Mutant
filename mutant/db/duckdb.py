@@ -1,4 +1,3 @@
-import duckdb
 from mutant.db.index.hnswlib import Hnswlib
 from mutant.db.clickhouse import (
     Clickhouse,
@@ -8,13 +7,14 @@ from mutant.db.clickhouse import (
     db_schema_to_keys,
 )
 import pandas as pd
+import duckdb
 import uuid
 
 
 def clickhouse_to_duckdb_schema(table_schema):
     for item in table_schema:
         if "embedding" in item:
-            item["embedding"] = "REAL[]"
+            item["embedding"] = 'REAL[]'
             # capitalize the key
             item[list(item.keys())[0]] = item[list(item.keys())[0]].upper()
             if "NULLABLE" in item[list(item.keys())[0]]:
@@ -37,13 +37,13 @@ class DuckDB(Clickhouse):
     # duckdb has different types, so we want to convert the clickhouse schema to duckdb schema
     def _create_table_embeddings(self):
         self._conn.execute(
-            f"""CREATE TABLE IF NOT EXISTS embeddings (
+            f"""CREATE TABLE embeddings (
             {db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(EMBEDDING_TABLE_SCHEMA))}"""
         )
 
     def _create_table_results(self):
         self._conn.execute(
-            f"""CREATE TABLE IF NOT EXISTS results 
+            f"""CREATE TABLE results 
             ({db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(RESULTS_TABLE_SCHEMA))}"""
         )
 
@@ -53,6 +53,7 @@ class DuckDB(Clickhouse):
         self._create_table_embeddings()
         self._create_table_results()
         self._idx = Hnswlib(settings)
+        self._settings = settings
 
     # the execute many syntax is different than clickhouse, the (?,?) syntax is different than clickhouse
     def add(
@@ -98,16 +99,16 @@ class DuckDB(Clickhouse):
             val = list(zip(*val))
         return val
 
-    def _delete(self, where={}):
-        uuids_deleted = self._conn.execute(f"""SELECT uuid FROM embeddings {where}""").fetchall()
+    def _delete(self, where_str):
+        uuids_deleted = self._conn.execute(f"""SELECT uuid FROM embeddings {where_str}""").fetchall()
         self._conn.execute(
             f"""
             DELETE FROM
                 embeddings
-        {where}
+        {where_str}
         """
         ).fetchall()[0]
-        return uuids_deleted
+        return [row[0] for row in uuids_deleted]
 
     def get_by_ids(self, ids=list):
         # select from duckdb table where ids are in the list

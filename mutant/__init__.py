@@ -1,4 +1,6 @@
 import mutant.config
+import logging
+
 
 __settings = mutant.config.Settings()
 
@@ -43,7 +45,6 @@ def get_db(settings=__settings):
 def get_api(settings=__settings):
     """Return a mutant. API instance based on the provided or environmental
     settings, optionally overriding the DB instance."""
-
     setting = settings.mutant_api_impl.lower()
 
     def require(key):
@@ -56,21 +57,21 @@ def get_api(settings=__settings):
         import mutant.api.arrowflight
 
         return mutant.api.arrowflight.ArrowFlightAPI(settings)
-    elif settings == 'rest':
+    elif setting == 'rest':
         require('mutant_server_host')
         require('mutant_server_http_port')
         print("Running mutant in client mode using REST to connect to remote server.")
         import mutant.api.fastapi
 
         return mutant.api.fastapi.FastAPI(settings)
-    elif settings == 'celery':
+    elif setting == 'celery':
         require('celery_broker_url')
         require('celery_result_backend')
         print("Running mutant in server mode with Celery jobs enabled.")
         import mutant.api.celery
 
         return mutant.api.celery.CeleryAPI(settings, get_db(settings))
-    elif settings == 'local':
+    elif setting == 'local':
         print("Running mutant using direct local API.")
         import mutant.api.local
 

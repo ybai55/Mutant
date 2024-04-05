@@ -17,17 +17,17 @@ class LocalAPI(API):
         dataset: list = None,
         inference_class: list = None,
         label_class: list = None,
-        model_spaces: list = None,
+        model_space: list = None,
     ):
 
         number_of_embeddings = len(embedding)
 
-        if isinstance(model_spaces, str):
-            model_space = [model_spaces] * number_of_embeddings
-        elif len(model_spaces) == 1:
-            model_space = [model_spaces[0]] * number_of_embeddings
+        if isinstance(model_space, str):
+            model_space = [model_space] * number_of_embeddings
+        elif len(model_space) == 1:
+            model_space = [model_space[0]] * number_of_embeddings
         else:
-            model_space = model_spaces
+            model_space = model_space
 
         if isinstance(dataset, str):
             ds = [dataset] * number_of_embeddings
@@ -55,28 +55,16 @@ class LocalAPI(API):
     def count(self, model_space=None):
 
         model_space = model_space or self._model_space
-        return {"count": self._db.count(model_space=model_space)}
+        return self._db.count(model_space=model_space)
 
     def reset(self):
         self._db.reset()
         return True
 
-    def get_nearest_neighbors(self, embedding, n_results, where):
+    def get_nearest_neighbors(self, embedding, n_results, where={}):
 
         where = self.where_with_model_space(where)
-
-        results = self._db.fetch(where)
-        ids = [str(item[get_col_pos("uuid")]) for item in results]
-
-        uuids, distances = self._db.get_nearest_neighbors(
-            where["model_space"], embedding, n_results, ids
-        )
-
-        return {
-            "ids": uuids,
-            "embeddings": self._db.get_by_ids(uuids),
-            "distances": distances.tolist()[0],
-        }
+        return self._db.get_nearest_neighbors(where, embedding, n_results)
 
     def raw_sql(self, raw_sql):
 
@@ -91,7 +79,7 @@ class LocalAPI(API):
 
         raise NotImplementedError("Cannot launch job: Celery is not configured")
 
-    def get_status(self, task_id):
+    def get_task_status(self, task_id):
 
         raise NotImplementedError("Cannot get status of job: Celery is not configured")
 

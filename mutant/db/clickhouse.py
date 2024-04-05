@@ -41,12 +41,6 @@ def db_schema_to_keys():
     return return_str
 
 
-def get_col_pos(col_name):
-    for i, col in enumerate(EMBEDDING_TABLE_SCHEMA):
-        if col_name in col:
-            return i
-
-
 class Clickhouse(DB):
 
     _conn = None
@@ -73,6 +67,7 @@ class Clickhouse(DB):
         self._create_table_embeddings()
         self._create_table_results()
         self._idx = Hnswlib(settings)
+        self._settings = settings
 
     def add(
         self,
@@ -143,37 +138,53 @@ class Clickhouse(DB):
         print(f"time to fetch {len(val)} embeddings: ", time.time() - s3)
         return val
 
+    def _count(self, model_space=None):
+        where_string = ""
+        if model_space is not None:
+            where_string = f" WHERE model_space = '{model_space}'"
+        return self._conn.execute(f"SELECT COUTN() FROM embeddings WHERE {where_string}")
+
+    def count(self, model_space=None):
+        return self._count(model_space=model_space)[0][0]
+
     def _delete(self, where={}):
         uuids_deleted = self._conn.execute(f"""SELECT toString(uuid) FROM embeddings {where}""")
         self._conn.execute(f"""DELETE FROM embeddings {where}""")
         return uuids_deleted
 
-    def delete(self, where={}):
-        if where["model_space"] is None:
+    def _delete(self, where_str):
+        uuid_deleted = self._conn.execute(f"""SELECT toString(uuid) FROM embeddings {where_str}""")
+        self._conn.execute(f"""
+            DELETE FROM embeddings {where_str}""")
+
+        return [row[0] for row in uuid_deleted]
+
+    def delete(self, where_str={}):
+        if where_str["model_space"] is None:
             return {"error": "model_space is required. Use reset to clear the entire database"}
 
         s3 = time.time()
         # check to see if query is a dict and if it is a flat list of key value pairs
-        if where is not None:
-            if not isinstance(where, dict):
-                raise Exception("Invalid where:" + str(where))
+        if where_str is not None:
+            if not isinstance(where_str, dict):
+                raise Exception("Invalid where:" + str(where_str))
 
             # ensure where is a flat dict
-            for key in where:
-                if isinstance(where[key], dict):
-                    raise Exception("Invalid where:" + str(where))
+            for key in where_str:
+                if isinstance(where_str[key], dict):
+                    raise Exception("Invalid where:" + str(where_str))
 
-        where = " AND ".join([f"{key} = '{value}'" for key, value in where.items()])
+        where_str = " AND ".join([f"{key} = '{value}'" for key, value in where_str.items()])
 
-        if where:
-            where = f"WHERE {where}"
-        deleted_uuids = self._delete(where=where)
+        if where_str:
+            where_str = f"WHERE {where_str}"
+        deleted_uuids = self._delete(where=where_str)
         print(f"time to fetch {len(deleted_uuids)} embeddings: ", time.time() - s3)
 
-        if len(where) == 1:
-            self._idx.delete(where["model_space"])
+        if len(where_str) == 1:
+            self._idx.delete(where_str["model_space"])
 
-        self._idx.delete_from_index(where["model_space"], [uuid[0] for uuid in deleted_uuids])
+        self._idx.delete_from_index(where_str["model_space"], [uuid[0] for uuid in deleted_uuids])
 
         return deleted_uuids
 
@@ -185,7 +196,7 @@ class Clickhouse(DB):
     def get_nearest_neighbors(self, where, embedding, n_results):
 
         results = self.fetch(where)
-        ids = [str(item[get_col_pos("uuid")]) for item in results]
+        ids = [str(item[self.get_col_pos("uuid")]) for item in results]
 
         uuids, distances = self._idx.get_nearest_neighbors(
             where["model_space"], embedding, n_results, ids
@@ -211,7 +222,7 @@ class Clickhouse(DB):
         self._create_table_results()
 
         self._idx.reset()
-        self._idx = Hnswlib()
+        self._idx = Hnswlib(self._settings)
 
     def raw_sql(self, sql):
         return self._conn.execute(sql)
@@ -255,3 +266,8 @@ class Clickhouse(DB):
             LIMIT {n_results}
         """
         )
+
+    def get_col_pos(self, col_name):
+        for i, col in enumerate(EMBEDDING_TABLE_SCHEMA):
+            if col_name in col:
+                return i
