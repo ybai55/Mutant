@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     celery_broker_url: str = None
     celery_result_backend: str = None
 
-    mutant_cache_dir: str = None
+    mutant_cache_dir: str = ".mutant"
 
     mutant_server_host: str = None
     mutant_server_http_port: str = None
