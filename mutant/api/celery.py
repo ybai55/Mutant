@@ -5,6 +5,9 @@ from celery.result import AsyncResult
 
 class CeleryAPI(LocalAPI):
 
+    def __init__(self, settings, db):
+        super().__init__()
+
     def process(self, model_space=None):
         self.create_index(model_space)
 
