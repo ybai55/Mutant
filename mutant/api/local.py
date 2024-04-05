@@ -1,6 +1,6 @@
 import time
 from mutant.api import API
-
+from mutant.utils.sampling import score_and_store, get_sample
 
 class LocalAPI(API):
 
@@ -75,9 +75,22 @@ class LocalAPI(API):
         self._db.create_index(model_space or self._model_space)
         return True
 
-    def process(self, model_space=None):
+    def process(self, model_space=None,
+                training_dataset_name="training",
+                inference_dataset_name="inference"):
 
-        raise NotImplementedError("Cannot launch job: Celery is not configured")
+        self._db.create_index(model_space)
+
+        # mutant_telemetry.capture('score_and_store')
+        score_and_store(
+            training_dataset_name=training_dataset_name,
+            inference_dataset_name=inference_dataset_name,
+            db_connection=self._db,
+            ann_index=self._db._idx,  # Breaks encapsulating should fix
+            model_space=model_space
+        )
+
+        return True
 
     def get_task_status(self, task_id):
 

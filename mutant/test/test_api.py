@@ -86,18 +86,7 @@ def test_fetch_from_db(api_fixture, request):
     api.add(**batch_records)
     records = api.fetch(where={"model_space": "test_space"})
 
-    assert len(records) == 2
-
-
-@pytest.mark.parametrize('api_fixture', test_apis)
-def test_fetch_from_db(api_fixture, request):
-    api = request.getfixturevalue(api_fixture.__name__)
-
-    api.reset()
-    api.add(**batch_records)
-    records = api.fetch(where={"model_space": "test_space"})
-
-    assert len(records) == 2
+    assert len(records['embedding']) == 2
 
 
 @pytest.mark.parametrize('api_fixture', test_apis)
@@ -124,6 +113,24 @@ def test_get_nearest_neighbors(api_fixture, request):
                                    where={"model_space": "test_space"})
 
     assert len(nn['ids']) == 1
+
+
+@pytest.mark.parametrize('api_fixture', test_apis)
+def test_get_nearest_neighbors_filter(api_fixture, request):
+    api = request.getfixturevalue(api_fixture.__name__)
+
+    api.reset()
+    api.add(**batch_records)
+    assert api.create_index(model_space="test_space")
+
+    with pytest.raises(Exception) as e:
+        nn = api.get_nearest_neighbors(embedding=[1.1, 2.3, 3.2],
+                                       n_results=1,
+                                       where={"model_space": "test_space",
+                                              "inference_class": "monkey",
+                                              "dataset": "training"})
+
+    assert str(e.value).__contains__("found")
 
 
 @pytest.mark.parametrize('api_fixture', test_apis)

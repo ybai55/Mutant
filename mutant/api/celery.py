@@ -8,14 +8,6 @@ class CeleryAPI(LocalAPI):
     def __init__(self, settings, db):
         super().__init__()
 
-    def process(self, model_space=None):
-        self.create_index(model_space)
-
-        task = heavy_offline_analysis.delay(model_space)
-        # mutant_telemetry.capture('heavy-offline-analysis')
-
-        return task.id
-
     def get_status(self, task_id):
 
         task_result = AsyncResult(task_id)
@@ -39,4 +31,4 @@ class CeleryAPI(LocalAPI):
         if results_count == 0:
             heavy_offline_analysis(model_space)
 
-        return self._db.return_results(model_space, n_results)
+        return self._db.get_results_by_column(model_space, n_results)

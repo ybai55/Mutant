@@ -1,8 +1,11 @@
+import pandas as pd
+
 from mutant.db import DB
 from mutant.db.index.hnswlib import Hnswlib
 import uuid
 import time
 import os
+import itertools
 
 from clickhouse_driver import connect, Client
 
@@ -19,7 +22,12 @@ EMBEDDING_TABLE_SCHEMA = [
 RESULTS_TABLE_SCHEMA = [
     {"model_space": "String"},
     {"uuid", "UUID"},
-    {"custom_quality_score": "Nullable(Float64)"},
+    {'activation_uncertainty': 'Float'},
+    {'boundary_uncertainty': 'Float'},
+    # {'representative_class_outlier': 'Float'},
+    # {'difficult_class_outlier': 'Float'},
+    {'representative_cluster_outlier': 'Float'},
+    {'difficult_cluster_outlier': 'Float'},
 ]
 
 
@@ -98,11 +106,9 @@ class Clickhouse(DB):
         self._conn.execute(f"""INSERT INTO embeddings ({insert_string}) VALUES """, data_to_insert)
 
     def _fetch(self, where={}, columnar=False):
-        return self._conn.execute(
-            f"""SELECT {db_schema_to_keys()} FROM embeddings {where}""", columnar=columnar
-        )
+        return self._conn.query_dataframe(f"""SELECT {db_schema_to_keys()} FROM embeddings {where}""")
 
-    def fetch(self, where={}, sort=None, limit=None, offset=None, columnar=False):
+    def fetch(self, where={}, sort=None, limit=None, offset=None):
         if where["model_space"] is None:
             return {"error": "model_space is required"}
 
@@ -134,7 +140,7 @@ class Clickhouse(DB):
             where += f" OFFSET {offset}"
         # print("where", where)
 
-        val = self._fetch(where=where, columnar=columnar)
+        val = self._fetch(where=where)
         print(f"time to fetch {len(val)} embeddings: ", time.time() - s3)
         return val
 
@@ -148,55 +154,69 @@ class Clickhouse(DB):
         return self._count(model_space=model_space)[0][0]
 
     def _delete(self, where={}):
-        uuids_deleted = self._conn.execute(f"""SELECT toString(uuid) FROM embeddings {where}""")
+        uuids_deleted = self._conn.query_dataframe(f"""SELECT uuid FROM embeddings {where}""")
         self._conn.execute(f"""DELETE FROM embeddings {where}""")
-        return uuids_deleted
+        return uuids_deleted.uuid.tolist()
 
-    def _delete(self, where_str):
-        uuid_deleted = self._conn.execute(f"""SELECT toString(uuid) FROM embeddings {where_str}""")
-        self._conn.execute(f"""
-            DELETE FROM embeddings {where_str}""")
-
-        return [row[0] for row in uuid_deleted]
-
-    def delete(self, where_str={}):
-        if where_str["model_space"] is None:
+    def delete(self, where={}):
+        if where["model_space"] is None:
             return {"error": "model_space is required. Use reset to clear the entire database"}
 
         s3 = time.time()
         # check to see if query is a dict and if it is a flat list of key value pairs
-        if where_str is not None:
-            if not isinstance(where_str, dict):
-                raise Exception("Invalid where:" + str(where_str))
+        if where is not None:
+            if not isinstance(where, dict):
+                raise Exception("Invalid where:" + str(where))
 
             # ensure where is a flat dict
-            for key in where_str:
-                if isinstance(where_str[key], dict):
-                    raise Exception("Invalid where:" + str(where_str))
+            for key in where:
+                if isinstance(where[key], dict):
+                    raise Exception("Invalid where:" + str(where))
 
-        where_str = " AND ".join([f"{key} = '{value}'" for key, value in where_str.items()])
+        where_str = " AND ".join([f"{key} = '{value}'" for key, value in where.items()])
 
         if where_str:
             where_str = f"WHERE {where_str}"
         deleted_uuids = self._delete(where=where_str)
         print(f"time to fetch {len(deleted_uuids)} embeddings: ", time.time() - s3)
 
-        if len(where_str) == 1:
-            self._idx.delete(where_str["model_space"])
+        if len(where) == 1:
+            self._idx.delete(where["model_space"])
 
-        self._idx.delete_from_index(where_str["model_space"], [uuid[0] for uuid in deleted_uuids])
+        self._idx.delete_from_index(where["model_space"], [uuid[0] for uuid in deleted_uuids])
 
         return deleted_uuids
 
     def get_by_ids(self, ids=list):
-        return self._conn.execute(
-            f"""SELECT {db_schema_to_keys()} FROM embeddings WHERE uuid IN ({ids}) """
-        )
+        df = self._conn.query_dataframe(f"""
+            SELECT {db_schema_to_keys()} FROM embeddings WHERE uuid IN ({[id.hex for id in ids]}) """)
+
+        return df
+
+    def get_random(self, where={}, n=1):
+        # check to see if query is a dict and if it is a flat list of key value pairs
+        if where is not None:
+            if not isinstance(where, dict):
+                raise Exception("Invalid where:" + str(where))
+
+            # ensure where is a flat dict
+            for key in where:
+                if isinstance(where[key], dict):
+                    raise Exception("Invalid where:" + str(where))
+
+        where = " AND ".join([f"{key} = '{value}" for key, value in where.items()])
+        if where:
+            where = f"WHERE {where}"
+        return self._conn.query_dataframe(f"""
+            SELECT {db_schema_to_keys()} FROM embeddings WHERE {where} ORDER BY rand() LIMIT {n}""")
 
     def get_nearest_neighbors(self, where, embedding, n_results):
 
         results = self.fetch(where)
-        ids = [str(item[self.get_col_pos("uuid")]) for item in results]
+        if len(results) > 0:
+            ids = results.uuid.tolist()
+        else:
+            raise Exception("No datapoints found for the supplied filter")
 
         uuids, distances = self._idx.get_nearest_neighbors(
             where["model_space"], embedding, n_results, ids
@@ -204,20 +224,21 @@ class Clickhouse(DB):
 
         return {
             "ids": uuids,
-            "embeddings": self.get_by_ids(uuids),
+            "embeddings": self.get_by_ids(uuids[0]),
             "distances": distances.tolist()[0],
         }
 
     def create_index(self, model_space):
-        fetch = self.fetch({"model_space": model_space}, columnar=True)
-        self._idx.run(model_space, fetch[1], fetch[2])  # more magic number, ugh
+        fetch = self.fetch({"model_space": model_space})
+        self._idx.run(model_space, fetch.uuid.tolist(), fetch.embedding.tolist())
+        # mutant_telemetry.capture('created-index-run-process', {'n': len(fetch)})
 
     def has_index(self, model_space):
         return self._idx.has_index(self, model_space)
 
     def reset(self):
-        self._conn.execute("DROP TABLE IF EXISTS embeddings")
-        self._conn.execute("DROP TABLE IF EXISTS results")
+        self._conn.execute("DROP TABLE embeddings")
+        self._conn.execute("DROP TABLE results")
         self._create_table_embeddings()
         self._create_table_results()
 
@@ -227,18 +248,27 @@ class Clickhouse(DB):
     def raw_sql(self, sql):
         return self._conn.execute(sql)
 
-    def add_results(self, model_space, uuids, custom_quality_score):
-        data_to_insert = []
-        for i in range(len(model_space)):
-            data_to_insert.append([model_space[i], uuids[i], custom_quality_score[i]])
+    def add_results(self, uuids, model_space, **kwargs):
+
+        # Make sure the kwarg keys are in the results table schema
+        results_table_cols = {list(col.keys())[0] for col in RESULTS_TABLE_SCHEMA}
+        results_cols = set(kwargs.keys())
+        results_cols.update(['uuid', 'model_space'])
+
+        if not (results_table_cols == results_cols):
+            if not results_table_cols.issuperset(results_cols):
+                raise Exception(f"Invalid results columns: {results_cols - results_table_cols}")
+            else:
+                # Log a warning
+                print(f"Warning: results missing columns: {results_table_cols - results_cols}")
+
+        data_to_insert = list(zip(itertools.repeat(model_space), uuid, *kwargs.values()))
 
         self._conn.execute(
-            """INSERT INTO results (model_space, uuid, custom_quality_score) VALUES """,
-            data_to_insert,
-        )
+            """INSERT INTO results (model_space, uuid, {",".join(kwargs.keys())}) VALUES""", data_to_insert)
 
     def delete_results(self, model_space):
-        self._conn.execute(f"DELETE FROM results WHERE model_space = '{model_space}'")
+        self._conn.execute(f"ALTER TABLE results DELETE WHERE model_space = '{model_space}'")
 
     def count_results(self, model_space=None):
         where_string = ""
@@ -246,13 +276,12 @@ class Clickhouse(DB):
             where_string = f"WHERE model_space = '{model_space}'"
         return self._conn.execute(f"SELECT COUNT() FROM results {where_string}")[0][0]
 
-    def return_results(self, model_space, n_results=100):
-        return self._conn.execute(
+    def get_results_by_column(self, column_name: str, model_space: str, n_results: int, sort: str = 'ASC'):
+        return self._conn.query_dataframe(
             f"""
             SELECT 
                 embeddings.input_uri, 
-                embeddings.embedding,
-                results.custom_quality_score 
+                results.{column_name} 
             FROM
                 results
             INNER JOIN 
@@ -262,12 +291,7 @@ class Clickhouse(DB):
             WHERE
                 results.model_space = '{model_space}'
             ORDER BY 
-                results.custom_quality_score DESC 
+                results.{column_name} {sort} 
             LIMIT {n_results}
         """
         )
-
-    def get_col_pos(self, col_name):
-        for i, col in enumerate(EMBEDDING_TABLE_SCHEMA):
-            if col_name in col:
-                return i
