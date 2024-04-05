@@ -41,6 +41,12 @@ def db_schema_to_keys():
     return return_str
 
 
+def get_col_pos(col_name):
+    for i, col in enumerate(EMBEDDING_TABLE_SCHEMA):
+        if col_name in col:
+            return i
+
+
 class Clickhouse(DB):
 
     _conn = None
@@ -66,7 +72,7 @@ class Clickhouse(DB):
         self._conn = Client(host=settings.clickhouse_host, port=settings.clickhouse_port)
         self._create_table_embeddings()
         self._create_table_results()
-        self._idx = Hnswlib()
+        self._idx = Hnswlib(settings)
 
     def add(
         self,
@@ -176,6 +182,21 @@ class Clickhouse(DB):
             f"""SELECT {db_schema_to_keys()} FROM embeddings WHERE uuid IN ({ids}) """
         )
 
+    def get_nearest_neighbors(self, where, embedding, n_results):
+
+        results = self.fetch(where)
+        ids = [str(item[get_col_pos("uuid")]) for item in results]
+
+        uuids, distances = self._idx.get_nearest_neighbors(
+            where["model_space"], embedding, n_results, ids
+        )
+
+        return {
+            "ids": uuids,
+            "embeddings": self.get_by_ids(uuids),
+            "distances": distances.tolist()[0],
+        }
+
     def create_index(self, model_space):
         fetch = self.fetch({"model_space": model_space}, columnar=True)
         self._idx.run(model_space, fetch[1], fetch[2])  # more magic number, ugh
@@ -234,8 +255,3 @@ class Clickhouse(DB):
             LIMIT {n_results}
         """
         )
-
-    def get_col_pos(self, col_name):
-        for i, col in enumerate(EMBEDDING_TABLE_SCHEMA):
-            if col_name in col:
-                return i

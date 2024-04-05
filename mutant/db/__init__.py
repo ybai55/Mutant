@@ -32,7 +32,7 @@ class DB(ABC):
         pass
 
     @abstractmethod
-    def get_nearest_neighbors(self, where, embedding, n_results, ids):
+    def get_nearest_neighbors(self, where, embedding, n_results):
         pass
 
     @abstractmethod

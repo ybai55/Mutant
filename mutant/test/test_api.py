@@ -2,4 +2,4 @@ import pytest
 
 
 def test_init():
-    assert(1==1)
+    assert 1 == 1
