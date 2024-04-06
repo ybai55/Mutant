@@ -207,13 +207,10 @@ def test_delete_with_index(api_fixture, request):
     nn = api.get_nearest_neighbors(embedding=[1.1, 2.3, 3.2],
                                    n_results=1)
 
-    print("nn", nn)
-    print("type", type[nn['embeddings']])
-    assert 1 == 2
-    # assert nn['embeddings'][0][5] == 'knife'
-    #
-    # assert api.delete(where={"inference_class": "knife"})
-    #
-    # nn2 = api.get_nearest_neighbors(embedding=[1.1, 2.3, 3.2],
-    #                                 n_results=1)
-    # assert nn2['embeddings'][0][5] == 'person'
+    assert nn['embeddings'][0][5] == 'knife'
+
+    assert api.delete(where={"inference_class": "knife"})
+
+    nn2 = api.get_nearest_neighbors(embedding=[1.1, 2.3, 3.2],
+                                    n_results=1)
+    assert nn2['embeddings'][0][5] == 'person'
