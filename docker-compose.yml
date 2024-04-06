@@ -7,11 +7,11 @@ networks:
 services:
   server:
     build:
-      context: ./mutant-server
+      context: .
       dockerfile: Dockerfile
       target: mutant_server
     volumes:
-      - ./mutant-server/:/mutant-server/
+      - ./mutant/:/mutant/
       - index_data:/index_data
     command: uvicorn app:app --reload --workers 1 --host 0.0.0.0 --port 8000
     environment:
@@ -22,24 +22,6 @@ services:
       - 8000:8000
     depends_on:
       - clickhouse
-      - redis
-    networks:
-      - mutant-net
-
-  worker:
-    build:
-      context: ./mutant-server
-      dockerfile: DockerfileCelery
-    command: celery worker --app=mutant_server.worker.celery --loglevel=info
-    volumes:
-      - ./mutant-server/:/mutant-server/
-      - index_data:/index_data
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-    depends_on:
-      - server
-      - redis
     networks:
       - mutant-net
 
@@ -56,11 +38,6 @@ services:
       - clickhouse_data:/bitnami/clickhouse
       - backups:/backups
       - ./config/backup_disk.xml:/etc/clickhouse-server/config.d/backup_disk.xml
-    networks:
-      - mutant-net
-
-  redis:
-    image: redis:6-alpine
     networks:
       - mutant-net
 
