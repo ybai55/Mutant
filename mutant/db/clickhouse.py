@@ -11,24 +11,24 @@ import itertools
 from clickhouse_driver import connect, Client
 
 EMBEDDING_TABLE_SCHEMA = [
-    {"model_space": "String"},
-    {"uuid": "UUID"},
-    {"embedding": "Array(Float64)"},
-    {"input_uri": "String"},
-    {"dataset": "String"},
-    {"inference_class": "String"},
-    {"label_class": "Nullable(String)"},
+    {'model_space': 'String'},
+    {'uuid': 'UUID'},
+    {'embedding': 'Array(Float64)'},
+    {'input_uri': 'String'},
+    {'dataset': 'String'},
+    {'inference_class': 'String'},
+    {'label_class': 'Nullable(String)'},
 ]
 
 RESULTS_TABLE_SCHEMA = [
-    {"model_space": "String"},
-    {"uuid", "UUID"},
-    {"activation_uncertainty": "Float"},
-    {"boundary_uncertainty": "Float"},
+    {'model_space': 'String'},
+    {'uuid': 'UUID'},
+    {'activation_uncertainty': 'Float'},
+    {'boundary_uncertainty': 'Float'},
     # {'representative_class_outlier': 'Float'},
     # {'difficult_class_outlier': 'Float'},
-    {"representative_cluster_outlier": "Float"},
-    {"difficult_cluster_outlier": "Float"},
+    {'representative_cluster_outlier': 'Float'},
+    {'difficult_cluster_outlier': 'Float'},
 ]
 
 

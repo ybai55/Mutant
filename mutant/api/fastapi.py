@@ -104,7 +104,6 @@ class FastAPI(API):
     ):
         """
         Processes embeddings in the database
-        - currently this only runs hnswlib, doesnt return anything
         """
         payload = {
             "model_space": model_space or self._model_space,

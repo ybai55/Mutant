@@ -13,18 +13,16 @@ import uuid
 
 def clickhouse_to_duckdb_schema(table_schema):
     for item in table_schema:
-        if "embedding" in item:
-            item["embedding"] = "REAL[]"
+        if 'embedding' in item:
+            item['embedding'] = 'REAL[]'
         # capitalize the key
         item[list(item.keys())[0]] = item[list(item.keys())[0]].upper()
-        if "NULLABLE" in item[list(item.keys())[0]]:
-            item[list(item.keys())[0]] = (
-                item[list(item.keys())[0]].replace("NULLABLE(", "").replace(")", "")
-            )
-        if "UUID" in item[list(item.keys())[0]]:
-            item[list(item.keys())[0]] = "STRING"
-        if "FLOAT64" in item[list(item.keys())[0]]:
-            item[list(item.keys())[0]] = "REAL"
+        if 'NULLABLE' in item[list(item.keys())[0]]:
+            item[list(item.keys())[0]] = item[list(item.keys())[0]].replace('NULLABLE(', '').replace(')', '')
+        if 'UUID' in item[list(item.keys())[0]]:
+            item[list(item.keys())[0]] = 'STRING'
+        if 'FLOAT64' in item[list(item.keys())[0]]:
+            item[list(item.keys())[0]] = 'REAL'
 
     return table_schema
 
@@ -36,15 +34,15 @@ class DuckDB(Clickhouse):
 
     # duckdb has different types, so we want to convert the clickhouse schema to duckdb schema
     def _create_table_embeddings(self):
-        self._conn.execute(
-            f"""CREATE TABLE embeddings (
-            {db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(EMBEDDING_TABLE_SCHEMA))}"""
-        )
+        self._conn.execute(f'''CREATE TABLE embeddings (
+                    {db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(EMBEDDING_TABLE_SCHEMA))}
+                ) ''')
 
     def _create_table_results(self):
+
         self._conn.execute(
             f"""CREATE TABLE results 
-            ({db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(RESULTS_TABLE_SCHEMA))}"""
+            ({db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(RESULTS_TABLE_SCHEMA))})"""
         )
 
     # duckdb has a different way of connecting to the database

@@ -38,4 +38,7 @@ build-backend = "setuptools.build_meta"
 local_scheme = "no-local-version"
 
 [tool.setuptools]
-py-modules = []
+py-modules = ["mutant"]
+
+# [tool.setuptools.package-data]
+# mutant = ["."]

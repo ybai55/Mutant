@@ -13,7 +13,7 @@ services:
     volumes:
       - ./mutant/:/mutant/
       - index_data:/index_data
-    command: uvicorn app:app --reload --workers 1 --host 0.0.0.0 --port 8000
+    command: uvicorn mutant.app:app --reload --workers 1 --host 0.0.0.0 --port 8000
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
