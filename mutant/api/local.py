@@ -38,6 +38,8 @@ class LocalAPI(API):
 
         self._db.add(model_space, embedding, input_uri, ds, inference_class, label_class)
 
+        return True
+
     def fetch(self, where={}, sort=None, limit=None, offset=None, page=None, page_size=None):
 
         if page and page_size:

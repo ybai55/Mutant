@@ -2,6 +2,7 @@ import pandas as pd
 
 from mutant.db import DB
 from mutant.db.index.hnswlib import Hnswlib
+from mutant.errors import NoDatapointsException
 import uuid
 import time
 import os
@@ -216,7 +217,7 @@ class Clickhouse(DB):
         if len(results) > 0:
             ids = results.uuid.tolist()
         else:
-            raise Exception("No datapoints found for the supplied filter")
+            raise NoDatapointsException("No datapoints found for the supplied filter")
 
         uuids, distances = self._idx.get_nearest_neighbors(
             where["model_space"], embedding, n_results, ids
