@@ -60,9 +60,17 @@ class FastAPI(mutant.server.Server):
         )
 
     def fetch(self, fetch: FetchEmbedding):
-        return self._api.fetch(
-            where=fetch.where, sort=fetch.sort, limit=fetch.limit, offset=fetch.offset
-        )
+        df = self._api.fetch(where=fetch.where,
+                             sort=fetch.sort,
+                             limit=fetch.limit,
+                             offset=fetch.offset)
+        # Would use DataFrame.to_json, but Clickhouse apparently
+        # returns some weird bytes that DataFrame.to_json can't
+        # handle.
+
+        # Perf was always going to be bad with JSON+dataframe, this
+        # shouldn't be too much worse.
+        return df.to_dict()
 
     def delete(self, delete: DeleteEmbedding):
         return self._api.delete(where=delete.where)
@@ -75,14 +83,16 @@ class FastAPI(mutant.server.Server):
 
     def get_nearest_neighbors(self, query: QueryEmbedding):
         try:
-            return self._api.get_nearest_neighbors(
-                where=query.where, embedding=query.embedding, n_results=query.n_results
-            )
+            nn_result = self._api.get_nearest_neighbors(where=query.where,
+                                                        embedding=query.embedding,
+                                                        n_results=query.n_results)
+            nn_result['embeddings'] = nn_result['embeddings'].to_dict()
+            return nn_result
         except NoDatapointsException:
             return {"error": "no data points"}
 
     def raw_sql(self, raw_sql: RawSql):
-        return self._api.raw_sql(raw_sql.raw_sql)
+        return self._api.raw_sql(raw_sql.raw_sql).to_dict()
 
     def create_index(self, process: ProcessEmbedding):
         return self._api.create_index(process.model_space)
@@ -95,4 +105,4 @@ class FastAPI(mutant.server.Server):
         return JSONResponse(self._api.get_task_status(task_id))
 
     def get_results(self, results: Results):
-        return self._api.get_results(results.model_space, results.n_results)
+        return self._api.get_results(results.model_space, results.n_results).to_dict()
