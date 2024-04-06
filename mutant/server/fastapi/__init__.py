@@ -50,18 +50,19 @@ class FastAPI(mutant.server.Server):
         return {"nanosecond heartbeat": self._api.heartbeat()}
 
     def add(self, add: AddEmbedding):
-        return self._api.add(model_space=add.model_space,
-                             embedding=add.embedding,
-                             input_uri=add.input_uri,
-                             dataset=add.dataset,
-                             inference_class=add.inference_class,
-                             label_class=add.label_class)
+        return self._api.add(
+            model_space=add.model_space,
+            embedding=add.embedding,
+            input_uri=add.input_uri,
+            dataset=add.dataset,
+            inference_class=add.inference_class,
+            label_class=add.label_class,
+        )
 
     def fetch(self, fetch: FetchEmbedding):
-        return self._api.fetch(where=fetch.where,
-                               sort=fetch.sort,
-                               limit=fetch.limit,
-                               offset=fetch.offset)
+        return self._api.fetch(
+            where=fetch.where, sort=fetch.sort, limit=fetch.limit, offset=fetch.offset
+        )
 
     def delete(self, delete: DeleteEmbedding):
         return self._api.delete(where=delete.where)
@@ -74,9 +75,9 @@ class FastAPI(mutant.server.Server):
 
     def get_nearest_neighbors(self, query: QueryEmbedding):
         try:
-            return self._api.get_nearest_neighbors(where=query.where,
-                                                   embedding=query.embedding,
-                                                   n_results=query.n_results)
+            return self._api.get_nearest_neighbors(
+                where=query.where, embedding=query.embedding, n_results=query.n_results
+            )
         except NoDatapointsException:
             return {"error": "no data points"}
 

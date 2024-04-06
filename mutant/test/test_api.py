@@ -12,15 +12,19 @@ from requests.exceptions import ConnectionError
 
 @pytest.fixture
 def local_api():
-    return mutant.get_api(mutant.config.Settings(mutant_api_impl="local",
-                                                 mutant_db_impl="duckdb",
-                                                 mutant_cache_dir=tempfile.gettempdir()))
+    return mutant.get_api(
+        mutant.config.Settings(
+            mutant_api_impl="local", mutant_db_impl="duckdb", mutant_cache_dir=tempfile.gettempdir()
+        )
+    )
 
 
 def _build_fastapi_api():
-    return mutant.get_api(Settings(mutant_api_impl="rest",
-                                   mutant_server_host="localhost",
-                                   mutant_server_http_port="8888"))
+    return mutant.get_api(
+        Settings(
+            mutant_api_impl="rest", mutant_server_host="localhost", mutant_server_http_port="8888"
+        )
+    )
 
 
 @pytest.fixture
@@ -29,12 +33,13 @@ def fastapi_api():
 
 
 def run_server():
-    settings = Settings(mutant_api_impl="local",
-                        mutant_db_impl="duckdb",
-                        mutant_cache_dir=tempfile.gettempdir() + "/test_server")
+    settings = Settings(
+        mutant_api_impl="local",
+        mutant_db_impl="duckdb",
+        mutant_cache_dir=tempfile.gettempdir() + "/test_server",
+    )
     server = mutant.server.fastapi.FastAPI(settings)
     uvicorn.run(server.app(), host="0.0.0.0", port=8888, log_level="info")
-
 
 
 def await_server(attempts=0):
@@ -69,15 +74,17 @@ def test_heartbeat(api_fixture, request):
     assert isinstance(api.heartbeat(), int)
 
 
-batch_records = {"embedding": [[1.1, 2.3, 3.2], [1.2, 2.24, 3.2]],
-                 "input_uri": ["https://example.com", "https://example.com"],
-                 "dataset": ["training", "training"],
-                 "inference_class": ["knife", "person"],
-                 "model_space": ["test_space", "test_space"],
-                 "label_class": ["person", "person"]}
+batch_records = {
+    "embedding": [[1.1, 2.3, 3.2], [1.2, 2.24, 3.2]],
+    "input_uri": ["https://example.com", "https://example.com"],
+    "dataset": ["training", "training"],
+    "inference_class": ["knife", "person"],
+    "model_space": ["test_space", "test_space"],
+    "label_class": ["person", "person"],
+}
 
 
-@ pytest.mark.parametrize('api_fixture', test_apis)
+@pytest.mark.parametrize("api_fixture", test_apis)
 def test_add(api_fixture, request):
     api = request.getfixturevalue(api_fixture.__name__)
 
@@ -88,30 +95,32 @@ def test_add(api_fixture, request):
     assert api.count(model_space="test_space") == 2
 
 
-@ pytest.mark.parametrize('api_fixture', test_apis)
+@pytest.mark.parametrize("api_fixture", test_apis)
 def test_add_with_default_model_space(api_fixture, request):
     api = request.getfixturevalue(api_fixture.__name__)
 
     api.reset()
 
-    api.set_model_space('foobar')
+    api.set_model_space("foobar")
 
     records = copy.deepcopy(batch_records)
-    records['model_space'] = None
+    records["model_space"] = None
     api.add(**batch_records)
 
     assert api.count() == 2
     assert api.count(model_space="foobar") == 2
 
 
-minimal_records = {"embedding": [[1.1, 2.3, 3.2], [1.2, 2.24, 3.2]],
-                   "input_uri": ["https://example.com", "https://example.com"],
-                   "dataset": "training",
-                   "inference_class": ["person", "person"],
-                   "model_space": "test_space"}
+minimal_records = {
+    "embedding": [[1.1, 2.3, 3.2], [1.2, 2.24, 3.2]],
+    "input_uri": ["https://example.com", "https://example.com"],
+    "dataset": "training",
+    "inference_class": ["person", "person"],
+    "model_space": "test_space",
+}
 
 
-@pytest.mark.parametrize('api_fixture', test_apis)
+@pytest.mark.parametrize("api_fixture", test_apis)
 def test_add_minimal(api_fixture, request):
     api = request.getfixturevalue(api_fixture.__name__)
 
@@ -122,7 +131,7 @@ def test_add_minimal(api_fixture, request):
     assert api.count(model_space="test_space") == 2
 
 
-@pytest.mark.parametrize('api_fixture', test_apis)
+@pytest.mark.parametrize("api_fixture", test_apis)
 def test_fetch_from_db(api_fixture, request):
     api = request.getfixturevalue(api_fixture.__name__)
 
@@ -130,12 +139,10 @@ def test_fetch_from_db(api_fixture, request):
     api.add(**batch_records)
     records = api.fetch(where={"model_space": "test_space"})
 
-    print("records:", records)
-
-    assert len(records['embedding']) == 2
+    assert len(records["embedding"]) == 2
 
 
-@pytest.mark.parametrize('api_fixture', test_apis)
+@pytest.mark.parametrize("api_fixture", test_apis)
 def test_reset_db(api_fixture, request):
     api = request.getfixturevalue(api_fixture.__name__)
 
@@ -148,7 +155,7 @@ def test_reset_db(api_fixture, request):
     assert api.count(model_space="test_space") == 0
 
 
-@pytest.mark.parametrize('api_fixture', test_apis)
+@pytest.mark.parametrize("api_fixture", test_apis)
 def test_get_nearest_neighbors(api_fixture, request):
     api = request.getfixturevalue(api_fixture.__name__)
 
@@ -156,14 +163,14 @@ def test_get_nearest_neighbors(api_fixture, request):
     api.add(**batch_records)
     assert api.create_index(model_space="test_space")
 
-    nn = api.get_nearest_neighbors(embedding=[1.1, 2.3, 3.2],
-                                   n_results=1,
-                                   where={"model_space": "test_space"})
+    nn = api.get_nearest_neighbors(
+        embedding=[1.1, 2.3, 3.2], n_results=1, where={"model_space": "test_space"}
+    )
 
-    assert len(nn['ids']) == 1
+    assert len(nn["ids"]) == 1
 
 
-@pytest.mark.parametrize('api_fixture', test_apis)
+@pytest.mark.parametrize("api_fixture", test_apis)
 def test_get_nearest_neighbors_filter(api_fixture, request):
     api = request.getfixturevalue(api_fixture.__name__)
 
@@ -172,16 +179,16 @@ def test_get_nearest_neighbors_filter(api_fixture, request):
     assert api.create_index(model_space="test_space")
 
     with pytest.raises(Exception) as e:
-        nn = api.get_nearest_neighbors(embedding=[1.1, 2.3, 3.2],
-                                       n_results=1,
-                                       where={"model_space": "test_space",
-                                              "inference_class": "monkey",
-                                              "dataset": "training"})
+        nn = api.get_nearest_neighbors(
+            embedding=[1.1, 2.3, 3.2],
+            n_results=1,
+            where={"model_space": "test_space", "inference_class": "monkey", "dataset": "training"},
+        )
 
     assert str(e.value).__contains__("found")
 
 
-@pytest.mark.parametrize('api_fixture', test_apis)
+@pytest.mark.parametrize("api_fixture", test_apis)
 def test_delete(api_fixture, request):
     api = request.getfixturevalue(api_fixture.__name__)
 
@@ -195,7 +202,7 @@ def test_delete(api_fixture, request):
     assert api.count() == 0
 
 
-@pytest.mark.parametrize('api_fixture', test_apis)
+@pytest.mark.parametrize("api_fixture", test_apis)
 def test_delete_with_index(api_fixture, request):
     api = request.getfixturevalue(api_fixture.__name__)
 
@@ -204,13 +211,11 @@ def test_delete_with_index(api_fixture, request):
     api.add(**batch_records)
     assert api.count() == 2
     api.create_index()
-    nn = api.get_nearest_neighbors(embedding=[1.1, 2.3, 3.2],
-                                   n_results=1)
+    nn = api.get_nearest_neighbors(embedding=[1.1, 2.3, 3.2], n_results=1)
 
-    assert nn['embeddings'][0][5] == 'knife'
+    assert nn["embeddings"][0][5] == "knife"
 
     assert api.delete(where={"inference_class": "knife"})
 
-    nn2 = api.get_nearest_neighbors(embedding=[1.1, 2.3, 3.2],
-                                    n_results=1)
-    assert nn2['embeddings'][0][5] == 'person'
+    nn2 = api.get_nearest_neighbors(embedding=[1.1, 2.3, 3.2], n_results=1)
+    assert nn2["embeddings"][0][5] == "person"

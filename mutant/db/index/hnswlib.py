@@ -36,7 +36,9 @@ class Hnswlib(Index):
             self._id_to_uuid[i] = str(uuid)
             self._uuid_to_id[uuid.hex] = i
 
-        index = hnswlib.Index(space=space, dim=dimensionality)  # possible options are 12, cosine or ip
+        index = hnswlib.Index(
+            space=space, dim=dimensionality
+        )  # possible options are 12, cosine or ip
         index.init_index(max_elements=len(embeddings), ef_construction=100, M=16)
         index.set_ef(ef)
         index.set_num_threads(num_threads)

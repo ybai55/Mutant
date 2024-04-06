@@ -33,7 +33,8 @@ class FastAPI(API):
             limit = page_size
         resp = requests.post(
             self._api_url + "/fetch",
-            data=json.dumps({"where": where, "sort": sort, "limit": limit, "offset": offset}))
+            data=json.dumps({"where": where, "sort": sort, "limit": limit, "offset": offset}),
+        )
 
         resp.raise_for_status()
         return resp.json()
@@ -42,20 +43,17 @@ class FastAPI(API):
         """Deletes embeddings from the database"""
 
         where = self.where_with_model_space(where)
-        resp =requests.post(
-            self._api_url + "/delete", data=json.dumps({"where": where}))
+        resp = requests.post(self._api_url + "/delete", data=json.dumps({"where": where}))
         resp.raise_for_status()
         return resp.json()
 
-    def add(
-        self,
-        embedding: list,
-        input_uri: list,
-        dataset: list = None,
-        inference_class: list = None,
-        label_class: list = None,
-        model_space: list = None,
-    ):
+    def add(self,
+            model_space,
+            embedding,
+            input_uri=None,
+            dataset=None,
+            inference_class=None,
+            label_class=None):
         """
         Adds a batch of embeddings to the database
         - pass in column oriented data lists
@@ -92,21 +90,25 @@ class FastAPI(API):
 
         resp.raise_for_status()
         val = resp.json()
-        if 'error' in val:
-            if val['error'] == 'no data points':
+        if "error" in val:
+            if val["error"] == "no data points":
                 raise NoDatapointsException("No datapoints found for the supplied filter")
             else:
-                raise Exception(val['error'])
+                raise Exception(val["error"])
         return val
 
-    def process(self, model_space=None, training_dataset_name="training", inference_dataset_name="inference"):
+    def process(
+        self, model_space=None, training_dataset_name="training", inference_dataset_name="inference"
+    ):
         """
         Processes embeddings in the database
         - currently this only runs hnswlib, doesnt return anything
         """
-        payload = {"model_space": model_space or self._model_space,
-                   "training_dataset_name": training_dataset_name,
-                   "inerence_dataset_name": inference_dataset_name}
+        payload = {
+            "model_space": model_space or self._model_space,
+            "training_dataset_name": training_dataset_name,
+            "inerence_dataset_name": inference_dataset_name,
+        }
         resp = requests.post(self._api_url + "/process", data=json.dumps(payload))
         resp.raise_for_status()
         return resp.json()

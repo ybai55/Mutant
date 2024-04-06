@@ -13,16 +13,18 @@ import uuid
 
 def clickhouse_to_duckdb_schema(table_schema):
     for item in table_schema:
-        if 'embedding' in item:
-            item['embedding'] = 'REAL[]'
+        if "embedding" in item:
+            item["embedding"] = "REAL[]"
         # capitalize the key
         item[list(item.keys())[0]] = item[list(item.keys())[0]].upper()
-        if 'NULLABLE' in item[list(item.keys())[0]]:
-            item[list(item.keys())[0]] = item[list(item.keys())[0]].replace('NULLABLE(', '').replace(')', '')
-        if 'UUID' in item[list(item.keys())[0]]:
-            item[list(item.keys())[0]] = 'STRING'
-        if 'FLOAT64' in item[list(item.keys())[0]]:
-            item[list(item.keys())[0]] = 'REAL'
+        if "NULLABLE" in item[list(item.keys())[0]]:
+            item[list(item.keys())[0]] = (
+                item[list(item.keys())[0]].replace("NULLABLE(", "").replace(")", "")
+            )
+        if "UUID" in item[list(item.keys())[0]]:
+            item[list(item.keys())[0]] = "STRING"
+        if "FLOAT64" in item[list(item.keys())[0]]:
+            item[list(item.keys())[0]] = "REAL"
 
     return table_schema
 
@@ -36,12 +38,14 @@ class DuckDB(Clickhouse):
     def _create_table_embeddings(self):
         self._conn.execute(
             f"""CREATE TABLE embeddings (
-            {db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(EMBEDDING_TABLE_SCHEMA))}""")
+            {db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(EMBEDDING_TABLE_SCHEMA))}"""
+        )
 
     def _create_table_results(self):
         self._conn.execute(
             f"""CREATE TABLE results 
-            ({db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(RESULTS_TABLE_SCHEMA))}""")
+            ({db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(RESULTS_TABLE_SCHEMA))}"""
+        )
 
     # duckdb has a different way of connecting to the database
     def __init__(self, settings):
@@ -80,21 +84,23 @@ class DuckDB(Clickhouse):
         )
         self._conn.executemany(
             f"""
-         INSERT INTO embeddings ({insert_string}) VALUES (?,?,?,?,?,?,?)""", data_to_insert)
+         INSERT INTO embeddings ({insert_string}) VALUES (?,?,?,?,?,?,?)""",
+            data_to_insert,
+        )
 
     def count(self, model_space=None):
         return self._count(model_space=model_space).fetchall()[0][0]
 
     def _fetch(self, where=""):
-        val = self._conn.execute(
-            f"""SELECT {db_schema_to_keys()} FROM embeddings {where}"""
-        ).df()
+        val = self._conn.execute(f"""SELECT {db_schema_to_keys()} FROM embeddings {where}""").df()
         # Convert UUID strings to UUID objects
-        val['uuid'] = val['uuid'].append(lambda x: uuid.UUID(x))
+        val["uuid"] = val["uuid"].append(lambda x: uuid.UUID(x))
         return val
 
     def _delete(self, where_str):
-        uuids_deleted = self._conn.execute(f"""SELECT uuid FROM embeddings {where_str}""").fetchall()
+        uuids_deleted = self._conn.execute(
+            f"""SELECT uuid FROM embeddings {where_str}"""
+        ).fetchall()
         self._conn.execute(
             f"""
             DELETE FROM

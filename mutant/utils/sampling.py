@@ -1,16 +1,24 @@
 from typing import Dict, List, Optional
 
 import numpy as np
-from mutant.algorithms.core_algorithms import (activation_uncertainty, boundary_uncertainty,
-                                               class_outliers, cluster_outliers)
+from mutant.algorithms.core_algorithms import (
+    activation_uncertainty,
+    boundary_uncertainty,
+    class_outliers,
+    cluster_outliers,
+)
 from mutant.db.clickhouse import Clickhouse
 from mutant.db.index.hnswlib import Hnswlib
 
 
 # Score each datapoint in the inference data, and store the scores in the database
-def score_and_store(training_dataset_name: str, inference_dataset_name: str,
-                    db_connection: Clickhouse, ann_index: Hnswlib,
-                    model_space: Optional[str] = "default_scope") -> None:
+def score_and_store(
+    training_dataset_name: str,
+    inference_dataset_name: str,
+    db_connection: Clickhouse,
+    ann_index: Hnswlib,
+    model_space: Optional[str] = "default_scope",
+) -> None:
 
     training_data = db_connection.fetch(
         where={"model_space": model_space, "dataset": training_dataset_name}
@@ -28,7 +36,7 @@ def score_and_store(training_dataset_name: str, inference_dataset_name: str,
         training_dataset=training_data,
         inference_data=inference_data,
         ann_index=ann_index,
-        model_space=model_space
+        model_space=model_space,
     )
 
     # TODO: Fix class outliers (ANN index issue)
@@ -94,6 +102,10 @@ def get_sample(
 
     # Add random samples to fill out the sample set
     n_random = n_samples - len(uris)
-    uris.update(db_connection.get_random(n=n_random, where={"model_space": model_space, "dataset": dataset_name}).input_uri.tolist())
+    uris.update(
+        db_connection.get_random(
+            n=n_random, where={"model_space": model_space, "dataset": dataset_name}
+        ).input_uri.tolist()
+    )
 
     return list(uris)

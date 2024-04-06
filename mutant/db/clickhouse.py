@@ -23,12 +23,12 @@ EMBEDDING_TABLE_SCHEMA = [
 RESULTS_TABLE_SCHEMA = [
     {"model_space": "String"},
     {"uuid", "UUID"},
-    {'activation_uncertainty': 'Float'},
-    {'boundary_uncertainty': 'Float'},
+    {"activation_uncertainty": "Float"},
+    {"boundary_uncertainty": "Float"},
     # {'representative_class_outlier': 'Float'},
     # {'difficult_class_outlier': 'Float'},
-    {'representative_cluster_outlier': 'Float'},
-    {'difficult_cluster_outlier': 'Float'},
+    {"representative_cluster_outlier": "Float"},
+    {"difficult_cluster_outlier": "Float"},
 ]
 
 
@@ -107,7 +107,9 @@ class Clickhouse(DB):
         self._conn.execute(f"""INSERT INTO embeddings ({insert_string}) VALUES """, data_to_insert)
 
     def _fetch(self, where={}, columnar=False):
-        return self._conn.query_dataframe(f"""SELECT {db_schema_to_keys()} FROM embeddings {where}""")
+        return self._conn.query_dataframe(
+            f"""SELECT {db_schema_to_keys()} FROM embeddings {where}"""
+        )
 
     def fetch(self, where={}, sort=None, limit=None, offset=None):
         if where["model_space"] is None:
@@ -189,8 +191,10 @@ class Clickhouse(DB):
         return deleted_uuids
 
     def get_by_ids(self, ids=list):
-        df = self._conn.query_dataframe(f"""
-            SELECT {db_schema_to_keys()} FROM embeddings WHERE uuid IN ({[id.hex for id in ids]}) """)
+        df = self._conn.query_dataframe(
+            f"""
+            SELECT {db_schema_to_keys()} FROM embeddings WHERE uuid IN ({[id.hex for id in ids]}) """
+        )
 
         return df
 
@@ -208,8 +212,10 @@ class Clickhouse(DB):
         where = " AND ".join([f"{key} = '{value}" for key, value in where.items()])
         if where:
             where = f"WHERE {where}"
-        return self._conn.query_dataframe(f"""
-            SELECT {db_schema_to_keys()} FROM embeddings WHERE {where} ORDER BY rand() LIMIT {n}""")
+        return self._conn.query_dataframe(
+            f"""
+            SELECT {db_schema_to_keys()} FROM embeddings WHERE {where} ORDER BY rand() LIMIT {n}"""
+        )
 
     def get_nearest_neighbors(self, where, embedding, n_results):
 
@@ -247,14 +253,14 @@ class Clickhouse(DB):
         self._idx = Hnswlib(self._settings)
 
     def raw_sql(self, sql):
-        return self._conn.execute(sql)
+        return self._conn.query_dataframe(sql)
 
     def add_results(self, uuids, model_space, **kwargs):
 
         # Make sure the kwarg keys are in the results table schema
         results_table_cols = {list(col.keys())[0] for col in RESULTS_TABLE_SCHEMA}
         results_cols = set(kwargs.keys())
-        results_cols.update(['uuid', 'model_space'])
+        results_cols.update(["uuid", "model_space"])
 
         if not (results_table_cols == results_cols):
             if not results_table_cols.issuperset(results_cols):
@@ -266,7 +272,9 @@ class Clickhouse(DB):
         data_to_insert = list(zip(itertools.repeat(model_space), uuid, *kwargs.values()))
 
         self._conn.execute(
-            """INSERT INTO results (model_space, uuid, {",".join(kwargs.keys())}) VALUES""", data_to_insert)
+            """INSERT INTO results (model_space, uuid, {",".join(kwargs.keys())}) VALUES""",
+            data_to_insert,
+        )
 
     def delete_results(self, model_space):
         self._conn.execute(f"ALTER TABLE results DELETE WHERE model_space = '{model_space}'")
@@ -277,7 +285,9 @@ class Clickhouse(DB):
             where_string = f"WHERE model_space = '{model_space}'"
         return self._conn.execute(f"SELECT COUNT() FROM results {where_string}")[0][0]
 
-    def get_results_by_column(self, column_name: str, model_space: str, n_results: int, sort: str = 'ASC'):
+    def get_results_by_column(
+        self, column_name: str, model_space: str, n_results: int, sort: str = "ASC"
+    ):
         return self._conn.query_dataframe(
             f"""
             SELECT 

@@ -2,6 +2,7 @@ import time
 from mutant.api import API
 from mutant.utils.sampling import score_and_store, get_sample
 
+
 class LocalAPI(API):
 
     def __init__(self, settings, db):
@@ -10,15 +11,15 @@ class LocalAPI(API):
     def heartbeat(self):
         return int(1000 * time.time_ns())
 
-    def add(
-        self,
-        embedding: list,
-        input_uri: list,
-        dataset: list = None,
-        inference_class: list = None,
-        label_class: list = None,
-        model_space: list = None,
-    ):
+    def add(self,
+            model_space,
+            embedding,
+            input_uri=None,
+            dataset=None,
+            inference_class=None,
+            label_class=None):
+
+        model_space = model_space or self.get_model_space()
 
         number_of_embeddings = len(embedding)
 
@@ -77,9 +78,9 @@ class LocalAPI(API):
         self._db.create_index(model_space or self._model_space)
         return True
 
-    def process(self, model_space=None,
-                training_dataset_name="training",
-                inference_dataset_name="inference"):
+    def process(
+            self, model_space=None, training_dataset_name="training", inference_dataset_name="inference"
+    ):
 
         self._db.create_index(model_space)
 
@@ -89,9 +90,10 @@ class LocalAPI(API):
             inference_dataset_name=inference_dataset_name,
             db_connection=self._db,
             ann_index=self._db._idx,  # Breaks encapsulating should fix
-            model_space=model_space
+            model_space=model_space,
         )
 
+        self.create_index(model_space)
         return True
 
     def get_task_status(self, task_id):
