@@ -92,13 +92,11 @@ class DuckDB(Clickhouse):
     def _fetch(self, where=""):
         val = self._conn.execute(f"""SELECT {db_schema_to_keys()} FROM embeddings {where}""").df()
         # Convert UUID strings to UUID objects
-        val["uuid"] = val["uuid"].append(lambda x: uuid.UUID(x))
+        val["uuid"] = val["uuid"].apply(lambda x: uuid.UUID(x))
         return val
 
     def _delete(self, where_str):
-        uuids_deleted = self._conn.execute(
-            f"""SELECT uuid FROM embeddings {where_str}"""
-        ).fetchall()
+        uuids_deleted = self._conn.execute(f"""SELECT uuid FROM embeddings {where_str}""").fetchall()
         self._conn.execute(
             f"""
             DELETE FROM
@@ -106,7 +104,7 @@ class DuckDB(Clickhouse):
         {where_str}
         """
         ).fetchall()[0]
-        return [uuid.UUID(x) for x in uuids_deleted]
+        return [uuid.UUID(x[0]) for x in uuids_deleted]
 
     def get_by_ids(self, ids=list):
         # select from duckdb table where ids are in the list

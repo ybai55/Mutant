@@ -39,6 +39,3 @@ local_scheme = "no-local-version"
 
 [tool.setuptools]
 py-modules = ["mutant"]
-
-# [tool.setuptools.package-data]
-# mutant = ["."]

@@ -106,10 +106,8 @@ class Clickhouse(DB):
         )
         self._conn.execute(f"""INSERT INTO embeddings ({insert_string}) VALUES """, data_to_insert)
 
-    def _fetch(self, where={}, columnar=False):
-        return self._conn.query_dataframe(
-            f"""SELECT {db_schema_to_keys()} FROM embeddings {where}"""
-        )
+    def _fetch(self, where={}):
+        return self._conn.query_dataframe(f"""SELECT {db_schema_to_keys()} FROM embeddings {where}""")
 
     def fetch(self, where={}, sort=None, limit=None, offset=None):
         if where["model_space"] is None:
@@ -126,7 +124,7 @@ class Clickhouse(DB):
                 if isinstance(where[key], dict):
                     raise Exception("Invalid where: " + str(where))
 
-        where = "AND".join([f"{key} = '{value}'" for key, value in where.items()])
+        where = " AND ".join([f"{key} = '{value}'" for key, value in where.items()])
 
         if where:
             where = f"WHERE {where}"
@@ -150,8 +148,8 @@ class Clickhouse(DB):
     def _count(self, model_space=None):
         where_string = ""
         if model_space is not None:
-            where_string = f" WHERE model_space = '{model_space}'"
-        return self._conn.execute(f"SELECT COUTN() FROM embeddings WHERE {where_string}")
+            where_string = f"WHERE model_space = '{model_space}'"
+        return self._conn.execute(f"SELECT COUNT() FROM embeddings {where_string}")
 
     def count(self, model_space=None):
         return self._count(model_space=model_space)[0][0]
@@ -180,13 +178,13 @@ class Clickhouse(DB):
 
         if where_str:
             where_str = f"WHERE {where_str}"
-        deleted_uuids = self._delete(where=where_str)
+        deleted_uuids = self._delete(where_str)
         print(f"time to fetch {len(deleted_uuids)} embeddings: ", time.time() - s3)
 
         if len(where) == 1:
-            self._idx.delete(where["model_space"])
-
-        self._idx.delete_from_index(where["model_space"], [uuid[0] for uuid in deleted_uuids])
+            self._idx.delete(where['model_space'])
+        else:
+            self._idx.delete_from_index(where['model_space'], deleted_uuids)
 
         return deleted_uuids
 

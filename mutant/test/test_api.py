@@ -97,6 +97,7 @@ def test_add(api_fixture, request):
 
 @pytest.mark.parametrize("api_fixture", test_apis)
 def test_add_with_default_model_space(api_fixture, request):
+    # TODO: fix this
     api = request.getfixturevalue(api_fixture.__name__)
 
     api.reset()
@@ -204,6 +205,7 @@ def test_delete(api_fixture, request):
 
 @pytest.mark.parametrize("api_fixture", test_apis)
 def test_delete_with_index(api_fixture, request):
+    # TODO: fix this
     api = request.getfixturevalue(api_fixture.__name__)
 
     api.reset()
