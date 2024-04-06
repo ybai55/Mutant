@@ -18,3 +18,4 @@ index_data
 *.log
 
 venv
+.env
