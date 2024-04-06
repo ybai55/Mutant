@@ -78,7 +78,7 @@ batch_records = {"embedding": [[1.1, 2.3, 3.2], [1.2, 2.24, 3.2]],
 
 
 @ pytest.mark.parametrize('api_fixture', test_apis)
-def test_addx(api_fixture, request):
+def test_add(api_fixture, request):
     api = request.getfixturevalue(api_fixture.__name__)
 
     api.reset()
