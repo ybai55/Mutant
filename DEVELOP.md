@@ -1,37 +1,77 @@
-# Development Instructions
+# Mutant
 
-by the PyPA organization and documented at
-https://packaging.python.org 
+Currently, this project is based on mutant.
+This project will follow each commit in mutant git history. 
+After rewrite mutant, this project will research on Milvus and VSearch,
+or focus on Indexing optimize based on Faiss learning.
 
 
-## Environment
+## Not expected things
+mutant use lots of third-party tools. Such as Sentry, PostHog and Clickhouse, which 
+I'm not familiar. I think it's not a first priority in this time. I'll follow the code, 
+but not verify things with those third-party things.
 
-To set up an environment allowing you to test, build or distribute the
-project, you will need to set up and activate a virtual environment
-specific to this library. For example:
+This repository is a project that first following the mutant's git network history, then think to imporve it.
+So may the first thousands commits will be the same as Chorma. The only diff is change the name.
+
+## Setup
+
+Set up a virtual environment and install the project's requirements
+and dev requirements:
 
 ```
 python3 -m venv venv      # Only need to do this once
 source venv/bin/activate  # Do this each time you use a new shell for the project
+pip install -r requirements.txt
+pip install -r requirements_dev.txt
+```
+You can also install `mutant` the `pypi` package locally and in editable mode with `pip install -e .`.
+
+
+## Running Mutant
+
+Mutant can be run via 3 modes:
+1. Standalone and in-memory:
+
+```python
+import mutant
+api = mutant.get_api()
+print(api.heartbeat())
+```
+pip install -r requirements_dev.txt
+
+
+2. Standalone and in-memory with persistance:
+
+This by default saves your db and your indexes to a `.mutant` directory and can also load from them. 
+```python
+import mutant
+from mutant.config import Settings
+api = mutant.get_api(Settings(mutant_db_impl="duckdb+parquet"))
+print(api.heartbeat())
 ```
 
-I use conda. So later should complete a conda env setting docs. 
+3. With a persistent backend and a small frontend client
 
-Then, install the development dependencies by running
+Run `docker-compose up -d --build`
+```python
+import mutant
+from mutant.config import Settings
+api = mutant.get_api(Settings(mutant_api_impl="rest",
+                              mutant_server_host="localhost",
+                              mutant_server_http_port="8000") )
 
-```
-pip install -r dev_requirements.txt
+print(api.heartbeat())
 ```
 
 ## Testing
 
-Unit tests are in the `/tests` directory.
-
+Unit tests are in the `/mutant/test` directory
 To run unit tests using your current environment, run `pytest`.
 
 ## Manual Build
 
-To manually build a distribution, run `python -m build`.
+To manually build a distribtution, run `python -m build`.
 
 The project's source and wheel distributions will be placed in the `dist` directory.
 
