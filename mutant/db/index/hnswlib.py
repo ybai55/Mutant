@@ -29,6 +29,11 @@ class Hnswlib(Index):
         ef = 10
         num_threads = 4
 
+        # print the first 10 uuids
+        # print(f'model_space: {model_space}')
+        # print(f'uuids: {uuids[:10]}')
+        # print(f'embeddings: {embeddings[:10]}')
+
         # more comments available at the source: https://github.com/nmslib/hnswlib
         dimensionality = len(embeddings[0])
 
@@ -52,6 +57,7 @@ class Hnswlib(Index):
             "time_created": time.time(),
         }
         self._save()
+        print("New index created with count", index.get_current_count())
 
     def delete(self, model_space):
         # delete files, dont throw error if they dont exist
