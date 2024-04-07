@@ -233,8 +233,18 @@ class Clickhouse(DB):
             "distances": distances.tolist()[0],
         }
 
-    def create_index(self, model_space):
-        fetch = self.fetch({"model_space": model_space})
+    def create_index(self, model_space: str, dataset_name: str = None) -> None:
+        """Create an index for a model_space and optionally scoped to a dataset.
+        Args:
+            model_space (str): The model_space to create an index for
+            dataset (str, optional): The dataset to scope the index to. Defaults to None.
+        Returns:
+            None
+        """
+        query = {"model_space": model_space}
+        if dataset_name is not None:
+            query["dataset_name"] = dataset_name
+        fetch = self.fetch(query)
         self._idx.run(model_space, fetch.uuid.tolist(), fetch.embedding.tolist())
         # mutant_telemetry.capture('created-index-run-process', {'n': len(fetch)})
 

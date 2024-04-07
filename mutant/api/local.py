@@ -84,8 +84,8 @@ class LocalAPI(API):
     def process(
             self, model_space=None, training_dataset_name="training", inference_dataset_name="inference"
     ):
-
-        self._db.create_index(model_space)
+        # Create the index only for the training set.
+        self._db.create_index(model_space=model_space, dataset_name=training_dataset_name)
 
         # mutant_telemetry.capture('score_and_store')
         print("running score_and_store")

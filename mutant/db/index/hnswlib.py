@@ -23,11 +23,7 @@ class Hnswlib(Index):
     def __init__(self, settings):
         self._save_folder = settings.mutant_cache_dir + "/index"
 
-    def run(self, model_space, uuids, embeddings):
-
-        space = "l2"
-        ef = 10
-        num_threads = 4
+    def run(self, model_space, uuids, embeddings, space='l2', ef=10, num_threads=4):
 
         # more comments available at the source: https://github.com/nmslib/hnswlib
         dimensionality = len(embeddings[0])
