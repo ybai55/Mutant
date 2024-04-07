@@ -125,7 +125,7 @@ class API(ABC):
         input_uri: list,
         inference_class: list,
         label_class: list = None,
-        model_spaces: list = None,
+        model_space: list = None,
     ):
         """
         Small wrapper around add() to add a batch of training embedding - sets dataset to "training"
@@ -136,7 +136,7 @@ class API(ABC):
             input_uri=input_uri,
             dataset=datasets,
             inference_class=inference_class,
-            model_spaces=model_spaces,
+            model_space=model_space,
             label_class=label_class,
         )
 
@@ -146,7 +146,7 @@ class API(ABC):
         input_uri: list,
         inference_class: list,
         label_class: list = None,
-        model_spaces: list = None,
+        model_space: list = None,
     ):
         """
         Small wrapper around add() to add a batch of production embedding - sets dataset to "production"
@@ -157,7 +157,7 @@ class API(ABC):
             input_uri=input_uri,
             dataset=datasets,
             inference_class=inference_class,
-            model_spaces=model_spaces,
+            model_space=model_space,
             label_class=label_class,
         )
 
@@ -167,7 +167,7 @@ class API(ABC):
         input_uri: list,
         inference_class: list,
         label_class: list = None,
-        model_spaces: list = None,
+        model_space: list = None,
     ):
         """
         Small wrapper around add() to add a batch of triage embedding - sets dataset to "triage"
@@ -178,6 +178,6 @@ class API(ABC):
             input_uri=input_uri,
             dataset=datasets,
             inference_class=inference_class,
-            model_spaces=model_spaces,
+            model_space=model_space,
             label_class=label_class,
         )
