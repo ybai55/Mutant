@@ -112,7 +112,7 @@ class LocalAPI(API):
         sample_proportions = {
             "activation_uncertainty": 0.3,
             "boundary_uncertainty": 0.3,
-            "representation_cluster_outlier": 0.2,
+            "representative_cluster_outlier": 0.2,
             "random": 0.2,
         }
         raise get_sample(n_samples=n_results,
