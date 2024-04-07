@@ -1,5 +1,8 @@
 import mutant
 from mutant.server.fastapi import FastAPI
 
-server = FastAPI(mutant.get_settings())
+settings = mutant.config.Settings(mutant_db_impl="clickhouse",
+                                  clickhouse_host="clickhouse",
+                                  clickhouse_port="9000",)
+server = FastAPI(settings)
 app = server.app()
