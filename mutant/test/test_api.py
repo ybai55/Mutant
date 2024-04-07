@@ -5,6 +5,7 @@ import pytest
 import time
 import tempfile
 import copy
+import os
 from multiprocessing import Process
 import uvicorn
 from requests.exceptions import ConnectionError
@@ -17,6 +18,11 @@ def local_api():
             mutant_api_impl="local", mutant_db_impl="duckdb", mutant_cache_dir=tempfile.gettempdir()
         )
     )
+
+
+@pytest.fixture
+def fastapi_integration_api():
+    return mutant.get_api()  # configured by environment variables
 
 
 def _build_fastapi_api():
@@ -65,6 +71,10 @@ def fastapi_server():
 
 
 test_apis = [local_api, fastapi_api]
+
+if "MUTANT_INTEGRATION_TEST" in os.environ:
+    print("Including integration tests")
+    test_apis.append(fastapi_integration_api)
 
 
 @pytest.mark.parametrize("api_fixture", test_apis)
