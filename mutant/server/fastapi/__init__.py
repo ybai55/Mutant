@@ -105,6 +105,6 @@ class FastAPI(mutant.server.Server):
         return JSONResponse(self._api.get_task_status(task_id))
 
     def get_results(self, results: Results):
-        results = self._api.get_results(results.model_space, results.n_results)
+        results = self._api.get_results(results.model_space, results.n_results, results.dataset_name)
         print("results", results)
         return results
