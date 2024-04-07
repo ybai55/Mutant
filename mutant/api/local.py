@@ -14,13 +14,15 @@ class LocalAPI(API):
     def heartbeat(self):
         return int(1000 * time.time_ns())
 
-    def add(self,
+    def add(
+            self,
             model_space,
             embedding,
             input_uri=None,
             dataset=None,
             inference_class=None,
-            label_class=None):
+            label_class=None,
+    ):
 
         model_space = model_space or self.get_model_space()
 
@@ -76,13 +78,12 @@ class LocalAPI(API):
 
         return self._db.raw_sql(raw_sql)
 
-    def create_index(self, model_space=None):
-
-        self._db.create_index(model_space or self._model_space)
+    def create_index(self, model_space=None, dataset_name=None):
+        self._db.create_index(model_space=model_space or self._model_space, dataset_name=dataset_name)
         return True
 
     def process(
-            self, model_space=None, training_dataset_name="training", inference_dataset_name="inference"
+            self, model_space=None, training_dataset_name="training", unlabeled_dataset_name="unlabeled"
     ):
         # Create the index only for the training set.
         self._db.create_index(model_space=model_space, dataset_name=training_dataset_name)
@@ -91,9 +92,9 @@ class LocalAPI(API):
         print("running score_and_store")
         score_and_store(
             training_dataset_name=training_dataset_name,
-            inference_dataset_name=inference_dataset_name,
+            unlabeled_dataset_name=unlabeled_dataset_name,
             db_connection=self._db,
-            ann_index=self._db._idx,  # Breaks encapsulating should fix
+            ann_index=self._db._idx,  # TODO: Breaks encapsulating should fix
             model_space=model_space,
         )
 
@@ -104,7 +105,7 @@ class LocalAPI(API):
 
         raise NotImplementedError("Cannot get status of job: Celery is not configured")
 
-    def get_results(self, model_space=None, n_results=100, dataset_name="inference"):
+    def get_results(self, model_space=None, n_results=100, dataset_name="unlabeled"):
         model_space = model_space or self._model_space
         sample_proportions = {
             "activation_uncertainty": 0.3,
@@ -112,5 +113,8 @@ class LocalAPI(API):
             "representation_cluster_outlier": 0.2,
             "random": 0.2,
         }
-        raise get_sample(n_samples=n_results, sample_proportions=sample_proportions, db_connection=self._db,
-                         model_space=model_space, dataset_name=dataset_name)
+        raise get_sample(n_samples=n_results,
+                         sample_proportions=sample_proportions,
+                         db_connection=self._db,
+                         model_space=model_space,
+                         dataset_name=dataset_name)

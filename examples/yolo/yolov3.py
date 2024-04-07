@@ -127,7 +127,7 @@ if __name__ == "__main__":
     print(api.get_model_space())
     print(api.count())
 
-    api.process(training_dataset_name="train", inference_dataset_name="test", model_space="yolov3")
+    api.process(training_dataset_name="train", unlabeled_dataset_name="test", model_space="yolov3")
     results = api.get_results(model_space="yolov3", n_results=100, dataset_name="test")
     print(results)
 

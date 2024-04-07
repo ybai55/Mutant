@@ -10,7 +10,7 @@ mutant_api.add_training(
     label_class=["bicycle", "car"],
     model_space="sample_space"
 )
-mutant_api.add_production(
+mutant_api.add_unlabeled(
     embedding=[[1.1, 2.3, 3.2], [4.5, 6.9, 4.4]],
     input_uri=["/images/3.png", "/images/5.png"],
     inference_class=["bicycle", "car"],
