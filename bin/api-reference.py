@@ -54,8 +54,8 @@ mutant_api.add_triage(
     model_space="sample_space"
 )
 
-# print("count")
-# print(mutant_api.count())
+print("count")
+print(mutant_api.count())
 
 # # print("fetch", mutant_api.fetch())
 # print("Generating the index")
