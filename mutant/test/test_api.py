@@ -97,7 +97,6 @@ def test_add(api_fixture, request):
 
 @pytest.mark.parametrize("api_fixture", test_apis)
 def test_add_with_default_model_space(api_fixture, request):
-    # TODO: fix this
     api = request.getfixturevalue(api_fixture.__name__)
 
     api.reset()
@@ -106,7 +105,7 @@ def test_add_with_default_model_space(api_fixture, request):
 
     records = copy.deepcopy(batch_records)
     records["model_space"] = None
-    api.add(**batch_records)
+    api.add(**records)
 
     assert api.count() == 2
     assert api.count(model_space="foobar") == 2
@@ -176,7 +175,7 @@ def test_get_nearest_neighbors_filter(api_fixture, request):
     api = request.getfixturevalue(api_fixture.__name__)
 
     api.reset()
-    api.add(**batch_records)
+    api.add(**minimal_records)
     assert api.create_index(model_space="test_space")
 
     with pytest.raises(Exception) as e:
@@ -205,7 +204,6 @@ def test_delete(api_fixture, request):
 
 @pytest.mark.parametrize("api_fixture", test_apis)
 def test_delete_with_index(api_fixture, request):
-    # TODO: fix this
     api = request.getfixturevalue(api_fixture.__name__)
 
     api.reset()
@@ -213,11 +211,14 @@ def test_delete_with_index(api_fixture, request):
     api.add(**batch_records)
     assert api.count() == 2
     api.create_index()
-    nn = api.get_nearest_neighbors(embedding=[1.1, 2.3, 3.2], n_results=1)
+    nn = api.get_nearest_neighbors(embedding=[1.1, 2.3, 3.2],
+                                   n_results=1)
 
-    assert nn["embeddings"][0][5] == "knife"
+    assert nn['embeddings']['inference_class'][0] == 'knife'
 
     assert api.delete(where={"inference_class": "knife"})
 
-    nn2 = api.get_nearest_neighbors(embedding=[1.1, 2.3, 3.2], n_results=1)
-    assert nn2["embeddings"][0][5] == "person"
+    nn2 = api.get_nearest_neighbors(embedding=[1.1, 2.3, 3.2],
+                                    n_results=1)
+    assert nn2['embeddings']['inference_class'][0] == 'person'
+
