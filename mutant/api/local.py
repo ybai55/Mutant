@@ -1,12 +1,15 @@
 import time
 from mutant.api import API
 from mutant.utils.sampling import score_and_store, get_sample
+from mutant.server.utils.telemetry.capture import Capture
 
 
 class LocalAPI(API):
 
     def __init__(self, settings, db):
         self._db = db
+        self._mutant_telemetry = Capture()
+        self._mutant_telemetry.capture("server-start")
 
     def heartbeat(self):
         return int(1000 * time.time_ns())
