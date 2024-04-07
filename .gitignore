@@ -20,3 +20,6 @@ index_data
 venv
 .env
 .mutant
+
+*.egg-info
+dist
