@@ -28,7 +28,7 @@ def fastapi_integration_api():
 def _build_fastapi_api():
     return mutant.get_api(
         Settings(
-            mutant_api_impl="rest", mutant_server_host="localhost", mutant_server_http_port="8888"
+            mutant_api_impl="rest", mutant_server_host="localhost", mutant_server_http_port="6666"
         )
     )
 
@@ -45,7 +45,7 @@ def run_server():
         mutant_cache_dir=tempfile.gettempdir() + "/test_server",
     )
     server = mutant.server.fastapi.FastAPI(settings)
-    uvicorn.run(server.app(), host="0.0.0.0", port=8888, log_level="info")
+    uvicorn.run(server.app(), host="0.0.0.0", port=6666, log_level="info")
 
 
 def await_server(attempts=0):
