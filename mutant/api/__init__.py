@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Union, Sequence, Optional, TypedDict
+from typing import Union, Sequence, Optional, TypedDict, List, Dict
 from uuid import UUID
 import pandas as pd
 
@@ -36,7 +36,8 @@ class API(ABC):
         pass
 
     @abstractmethod
-    def fetch(self, where: Optional[dict[str, str]] = {},
+    def fetch(self,
+              where: Optional[Dict[str, str]] = {},
               sort: Optional[str] = None,
               limit: Optional[int] = None,
               offset: Optional[int] = None,
@@ -46,7 +47,7 @@ class API(ABC):
         pass
 
     @abstractmethod
-    def delete(self, where: Optional[dict[str, str]] = {}) -> Sequence[UUID]:
+    def delete(self, where: Optional[Dict[str, str]] = {}) -> Sequence[UUID]:
         """Deletes embeddings from the database"""
         pass
 
@@ -59,7 +60,7 @@ class API(ABC):
     def get_nearest_neighbors(self,
                               embedding: Sequence[float],
                               n_results: int = 10,
-                              where: dict[str, str] = {}) -> NearestNeighborsResult:
+                              where: Dict[str, str] = {}) -> NearestNeighborsResult:
         """Gets the nearest neighbors of a single embedding"""
         pass
 
