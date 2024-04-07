@@ -8,15 +8,14 @@ class DB(ABC):
         pass
 
     @abstractmethod
-    def add(
-        self,
-        model_space,
-        embedding,
-        input_uri,
-        dataset=None,
-        inference_class=None,
-        label_class=None,
-    ):
+    def add(self,
+            model_space: str,
+            embedding,
+            input_uri,
+            dataset=None,
+            custom_quality_score=None,
+            inference_class=None,
+            label_class=None):
         pass
 
     @abstractmethod
@@ -60,7 +59,9 @@ class DB(ABC):
         pass
 
     @abstractmethod
-    def get_results_by_column(self, column_name: str, model_space: str, n_results: int, sort: str = "ASC"):
+    def get_results_by_column(
+        self, column_name: str, model_space: str, n_results: int, sort: str = "ASC"
+    ):
         pass
 
     @abstractmethod
@@ -68,11 +69,13 @@ class DB(ABC):
         pass
 
     @abstractmethod
-    def add_results(self,
-                    uuid: list,
-                    model_space: str,
-                    activation_uncertainty: list = None,
-                    boundary_uncertainty: list =None,
-                    representative_cluster_outlier: list = None,
-                    difficult_cluster_outlier: list = None):
+    def add_results(
+        self,
+        uuid: list,
+        model_space: str,
+        activation_uncertainty: list = None,
+        boundary_uncertainty: list = None,
+        representative_cluster_outlier: list = None,
+        difficult_cluster_outlier: list = None,
+    ):
         pass

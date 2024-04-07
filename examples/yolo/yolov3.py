@@ -1,4 +1,3 @@
-from mutant_client import Mutant
 import pyarrow.parquet as pq
 import numpy as np
 from pandas.io.json import json_normalize
@@ -7,10 +6,16 @@ import time
 import os
 import pandas as pd
 
+import mutant
+from mutant.config import Settings
+
 
 if __name__ == "__main__":
 
-    file = '../data__nogit/yolov3_objects_large_5k.parquet'
+    api = mutant.get_api(Settings(mutant_api_impl="rest",
+                                  mutant_server_host="localhost", mutant_server_port="8000"))
+
+    file = '../data__nogit/yolov3_objects_large.parquet'
 
     print("Loading parquet file:", file)
     py = pq.read_table(file)
@@ -19,7 +24,7 @@ if __name__ == "__main__":
 
     data_length = len(df)
 
-    mutant = Mutant(model_space="yolov3")
+    api.set_model_space("yolov3")
     mutant.reset()  # make sure we are using a fresh db
     allstart = time.time()
     start = time.time()
@@ -31,7 +36,7 @@ if __name__ == "__main__":
 
     for i in range(0, data_length, BATCH_SIZE):
         # exist after batch size is more than 50000
-        if i >= 200_000:
+        if i >= 50_000:
             break
         end = time.time()
         page = i * BATCH_SIZE
@@ -59,23 +64,29 @@ if __name__ == "__main__":
             for idx, annotation in enumerate(row['infer']['annotations']):
                 inference_classes.append(annotation['category_name'])
 
+        if i < 25_000:
+            dataset = "train"
+        else:
+            dataset = "test"
+
         # log the batch
-        mutant.add(
+        api.add(
             embedding=embedding,
             input_uri=input_uri,
             dataset=dataset,
-            inference_class=inference_classes
+            inference_class=inference_classes,
+            model_space="yolov3",
         )
 
     allend = time.time()
     print("time to log all", "{:.2f}".format(allend - allstart) + 's')
 
-    fetched = mutant.count()
+    fetched = api.count()
     print("Records loaded into the database: ", fetched)
 
     # time this function
     start = time.time()
-    mutant.process()
+    api.create_index()
     end = time.time()
     print("Time to process: "  +'{0:.2f}'.format((end - start)) + 's')
 
@@ -101,23 +112,23 @@ if __name__ == "__main__":
                        -9.694372177124023, -13.132003784179688, -9.38864803314209, -14.305071830749512,
                        -14.4693603515625, -5.0566205978393555, -15.685358047485352, -12.493011474609375,
                        -8.424881935119629]
-    start = time.time()
-    get_nearest_neighbors = mutant.get_nearest_neighbors(knife_embedding, 4,
-                                                         where={"inference_class": "knife", "dataset": "training"})
-    print("get_nearest_neighbors: ", get_nearest_neighbors)
-    res_df = pd.DataFrame(get_nearest_neighbors['embeddings'])
-    print(res_df.head())
+    # start = time.time()
+    # get_nearest_neighbors = mutant.get_nearest_neighbors(knife_embedding, 4,
+    #                                                      where={"inference_class": "knife", "dataset": "training"})
+    # print("get_nearest_neighbors: ", get_nearest_neighbors)
+    # res_df = pd.DataFrame(get_nearest_neighbors['embeddings'])
+    # print(res_df.head())
+    #
+    # print("Distances to nearest neighbors:", get_nearest_neighbors['distances'])
+    # print("Internal ids of nearest neighbors:", get_nearest_neighbors['ids'])
+    # end = time.time()
+    # print("Time to get nearest neighbors: " +'{0:.2f}'.format((end - start)) + 's')
 
-    print("Distances to nearest neighbors:", get_nearest_neighbors['distances'])
-    print("Internal ids of nearest neighbors:", get_nearest_neighbors['ids'])
-    end = time.time()
-    print("Time to get nearest neighbors: " +'{0:.2f}'.format((end - start)) + 's')
+    print(api.get_model_space())
+    print(api.count())
 
-    task = mutant.calculate_results()
-    print(task)
-    print(mutant.get_task_status(task['task_id']))
+    api.process(training_dataset_name="train", inference_dataset_name="test", model_space="yolov3")
+    results = api.get_results(model_space="yolov3", n_results=100, dataset_name="test")
+    print(results)
 
-    fetched = mutant.count()
-    print("Records loaded into the database: ", fetched)
-    del mutant
-
+    print(api.raw_sql("SELECT * FROM results"))

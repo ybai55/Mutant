@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Optional, Tuple
 
 import hdbscan
 import numpy as np
@@ -7,7 +7,7 @@ from mutant.db.index.hnswlib import Hnswlib
 
 
 def activation_uncertainty(training_data: pd.DataFrame, inference_data: pd.DataFrame) -> np.ndarray:
-    """ Calculate the activation uncertainty of the inference data, given the class-wise activation uncertainties in the
+    """Calculate the activation uncertainty of the inference data, given the class-wise activation uncertainties in the
         training data.
     Args:
         training_data (DataFrame): training data as a Pandas DataFrame.
@@ -41,19 +41,19 @@ def activation_uncertainty(training_data: pd.DataFrame, inference_data: pd.DataF
 
         inference_parcentiles = training_percentiles[inference_positions]
 
-        activation_uncertainty[
-            inference_data["inference_class"] == class_name
-            ] = inference_parcentiles
+        activation_uncertainty[inference_data["inference_class"] == class_name] = (
+            inference_parcentiles
+        )
 
     return activation_uncertainty
 
 
 def boundary_uncertainty(
-        training_data: pd.DataFrame,
-        inference_data: pd.DataFrame,
-        ann_index: Hnswlib,
-        n_neighbors: Optional[int] = 100,
-        model_space: Optional[str] = "default_scope",
+    training_data: pd.DataFrame,
+    inference_data: pd.DataFrame,
+    ann_index: Hnswlib,
+    n_neighbors: Optional[int] = 100,
+    model_space: Optional[str] = "default_scope",
 ) -> np.ndarray:
     """Calculate the boundary uncertainty of the inference data, the training data, and an ANN index containing both.
     Args:
@@ -90,11 +90,11 @@ def boundary_uncertainty(
 
 
 def class_outliers(
-        training_data: pd.DataFrame,
-        inference_data: pd.DataFrame,
-        ann_index: Hnswlib,
-        n_neighbors: Optional[int] = 100,
-        model_space: Optional[str] = "default_scope",
+    training_data: pd.DataFrame,
+    inference_data: pd.DataFrame,
+    ann_index: Hnswlib,
+    n_neighbors: Optional[int] = 100,
+    model_space: Optional[str] = "default_scope",
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Calculate the class outlier score of the inference data, the training data, and an ANN index containing both.
     Args:
@@ -133,29 +133,29 @@ def class_outliers(
         dist_diff = np.median(t_neighbor_dists, axis=1) - np.median(v_neighbor_dists, axis=1)
         dist_diff_percentiles = np.argsort(dist_diff) / len(dist_diff)
 
-        representative_outliers[
-            inference_data["inference_class"] == class_name
-            ] = dist_diff_percentiles
+        representative_outliers[inference_data["inference_class"] == class_name] = (
+            dist_diff_percentiles
+        )
 
         overall_median = np.median(
             np.concatenate((t_neighbor_dists, v_neighbor_dists), axis=1), axis=1
         )
         overall_median_percentiles = np.argsort(overall_median) / len(overall_median)
 
-        difficult_outliers[
-            inference_data["inference_class"] == class_name
-            ] = overall_median_percentiles
+        difficult_outliers[inference_data["inference_class"] == class_name] = (
+            overall_median_percentiles
+        )
 
     return representative_outliers, difficult_outliers
 
 
 def cluster_outliers(
-        training_data: pd.DataFrame,
-        inference_data: pd.DataFrame,
-        training_subsample: Optional[int] = 10,
-        min_cluster_size: Optional[int] = 500,
-        min_samples: Optional[int] = 500,
-        metric: Optional[str] = "euclidean",
+    training_data: pd.DataFrame,
+    inference_data: pd.DataFrame,
+    training_subsample: Optional[int] = 10,
+    min_cluster_size: Optional[int] = 500,
+    min_samples: Optional[int] = 500,
+    metric: Optional[str] = "euclidean",
 ) -> Tuple[np.ndarray, np.ndarray]:
     """Calculate the cluster outlier score of the inference data, the training data, and an ANN index containing both.
     Args:
@@ -216,4 +216,3 @@ def random_sample(inference_data: pd.DataFrame, n_samples: Optional[int] = 1000)
     sample[np.random.choice(len(inference_data), n_samples, replace=False)] = True
 
     return sample
-

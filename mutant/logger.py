@@ -8,4 +8,5 @@ def setup_logging():
     logger.debug("Logger created")
     return logger
 
+
 logger = setup_logging()

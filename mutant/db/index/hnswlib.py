@@ -23,11 +23,7 @@ class Hnswlib(Index):
     def __init__(self, settings):
         self._save_folder = settings.mutant_cache_dir + "/index"
 
-    def run(self, model_space, uuids, embeddings):
-
-        space = "l2"
-        ef = 10
-        num_threads = 4
+    def run(self, model_space, uuids, embeddings, space='l2', ef=10, num_threads=4):
 
         # more comments available at the source: https://github.com/nmslib/hnswlib
         dimensionality = len(embeddings[0])
@@ -36,7 +32,9 @@ class Hnswlib(Index):
             self._id_to_uuid[i] = str(uuid)
             self._uuid_to_id[uuid.hex] = i
 
-        index = hnswlib.Index(space=space, dim=dimensionality)  # possible options are 12, cosine or ip
+        index = hnswlib.Index(
+            space=space, dim=dimensionality
+        )  # possible options are 12, cosine or ip
         index.init_index(max_elements=len(embeddings), ef_construction=100, M=16)
         index.set_ef(ef)
         index.set_num_threads(num_threads)
@@ -74,9 +72,9 @@ class Hnswlib(Index):
 
         if self._index is not None:
             for uuid in uuids:
-                self._index.mark_deleted(self._uuid_to_id[uuid])
-                del self._id_to_uuid[self._uuid_to_id[uuid]]
-                del self._uuid_to_id[uuid]
+                self._index.mark_deleted(self._uuid_to_id[uuid.hex])
+                del self._id_to_uuid[self._uuid_to_id[uuid.hex]]
+                del self._uuid_to_id[uuid.hex]
 
         self._save()
 

@@ -9,6 +9,7 @@ from mutant.db.clickhouse import (
 import pandas as pd
 import duckdb
 import uuid
+import itertools
 
 
 def clickhouse_to_duckdb_schema(table_schema):
@@ -27,21 +28,23 @@ def clickhouse_to_duckdb_schema(table_schema):
     return table_schema
 
 
-# Note: inherits ClickHouse for convenience of copying behavior, not
+# TODO: inherits ClickHouse for convenience of copying behavior, not
 # because it's logically a subtype. Factoring out the common behavior
 # to a third superclass they both extend would be preferable.
 class DuckDB(Clickhouse):
 
     # duckdb has different types, so we want to convert the clickhouse schema to duckdb schema
     def _create_table_embeddings(self):
-        self._conn.execute(
-            f"""CREATE TABLE embeddings (
-            {db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(EMBEDDING_TABLE_SCHEMA))}""")
+        self._conn.execute(f'''CREATE TABLE embeddings (
+                    {db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(EMBEDDING_TABLE_SCHEMA))}
+                ) ''')
 
     def _create_table_results(self):
+
         self._conn.execute(
             f"""CREATE TABLE results 
-            ({db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(RESULTS_TABLE_SCHEMA))}""")
+            ({db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(RESULTS_TABLE_SCHEMA))})"""
+        )
 
     # duckdb has a different way of connecting to the database
     def __init__(self, settings):
@@ -80,17 +83,17 @@ class DuckDB(Clickhouse):
         )
         self._conn.executemany(
             f"""
-         INSERT INTO embeddings ({insert_string}) VALUES (?,?,?,?,?,?,?)""", data_to_insert)
+         INSERT INTO embeddings ({insert_string}) VALUES (?,?,?,?,?,?,?)""",
+            data_to_insert,
+        )
 
     def count(self, model_space=None):
         return self._count(model_space=model_space).fetchall()[0][0]
 
     def _fetch(self, where=""):
-        val = self._conn.execute(
-            f"""SELECT {db_schema_to_keys()} FROM embeddings {where}"""
-        ).df()
+        val = self._conn.execute(f"""SELECT {db_schema_to_keys()} FROM embeddings {where}""").df()
         # Convert UUID strings to UUID objects
-        val['uuid'] = val['uuid'].append(lambda x: uuid.UUID(x))
+        val["uuid"] = val["uuid"].apply(lambda x: uuid.UUID(x))
         return val
 
     def _delete(self, where_str):
@@ -102,14 +105,12 @@ class DuckDB(Clickhouse):
         {where_str}
         """
         ).fetchall()[0]
-        return [uuid.UUID(x) for x in uuids_deleted]
+        return [uuid.UUID(x[0]) for x in uuids_deleted]
 
     def get_by_ids(self, ids=list):
         # select from duckdb table where ids are in the list
         if not isinstance(ids, list):
             raise Exception("ids must be a list")
-
-        print("ids: ", ids)
 
         if not ids:
             # create an empty pandas dataframe
@@ -126,14 +127,78 @@ class DuckDB(Clickhouse):
         """
         ).df()
 
+    def delete_results(self, model_space):
+        self._conn.execute(f"DELETE FROM results WHERE model_space = '{model_space}'")
+
+    def add_results(self, uuids, model_space, **kwargs):
+        # Make sure the kwarg keys are in the results table schema
+        results_table_cols = {list(col.keys()) for col in RESULTS_TABLE_SCHEMA}
+        results_cols = set(kwargs.keys())
+        results_cols.update(['uuid', 'model_space'])
+
+        if not (results_table_cols == results_cols):
+            if not results_table_cols.issuperset(results_cols):
+                raise Exception(f"Invalid results columns: {results_cols - results_table_cols}")
+            else:
+                # Log a warning
+                print(f"Warning: results missing columns: {results_table_cols - results_cols}")
+
+        data_to_insert = list(zip(itertools.repeat(model_space), uuid, kwargs.values()))
+        # convert numpy floats to python floats
+        data_to_insert = [[x[0], x[1], *[float(y) for y in x[2:]]] for x in data_to_insert]
+        question_marks = ", ".join(["?"] * len(kwargs.keys()))
+        self._conn.executemany(f"""
+            INSERT INTO  results (model_space, uuid, {",",join(kwargs.keys())}) VALUES (?, ?, {question_marks})""",
+                               data_to_insert)
+
+    def get_results_by_column(self, column_name: str, model_space: str, n_results: int, sort: str = "ASC"):
+        return self._conn.execute(f'''
+            SELECT 
+                embeddings.input_uri,
+                results.{column_name}
+            FROM
+                results
+            INNER JOIN 
+                embeddings
+            ON 
+                results.uuid = embeddings.uuid
+            WHERE
+                results.model_space = '{model_space}'
+            ORDER BY 
+                results.{column_name} {sort}
+            LIMIT {n_results}
+        ''').df()
+
+    def get_random(self, where={}, n=1):
+        # check to see if query is a dict and if it is a flat list of key value pairs
+        if where is not None:
+            if not isinstance(where, dict):
+                raise Exception("Invalid where: " + str(where))
+
+            # ensure where is a flat dict
+            for key in where.keys():
+                if isinstance(where[key], dict):
+                    raise Exception("Invalid where: " + str(where[key]))
+
+        where = " AND ".join([f"{key} = '{value}'" for key, value in where.items()])
+        if where:
+            where = f"WHERE {where}"
+
+        return self._conn.execute(f'''
+            SELECT {db_schema_to_keys()} FROM embeddings {where} LIMIT {n}''').df()  # ORDER BY rand()
+
+
+
 
 class PersistentDuckDB(DuckDB):
 
     _save_folder = None
 
     def __init__(self, settings):
-        super().__init__()
+        super().__init__(settings=settings)
         self._save_folder = settings.mutant_cache_dir
+
+        self.load()
 
     def set_save_folder(self, path):
         self._save_folder = path
@@ -148,6 +213,10 @@ class PersistentDuckDB(DuckDB):
         if self._conn is None:
             return
 
+        # if the db is empty, dont save
+        if self.count() == 0:
+            return
+
         self._conn.execute(
             f"""
                 COPY
@@ -156,13 +225,33 @@ class PersistentDuckDB(DuckDB):
                     (FORMAT PARQUET);
             """
         )
+        self._conn.execute(f'''
+            COPY
+                (SELECT * FROM results)
+            TO  '{self._save_folder}/mutant_results.parquet'
+                (FORMAT PARQUET);
+        ''')
 
     def load(self):
         """
         Load the database from disk
         """
-        path = self._save_folder + "/mutant.parquet"
-        self._conn.execute(f"INSERT INTO embeddings SELECT * FROM read_parquet('{path}');")
+        import os
+
+        # load in the embeddings
+        if not os.path.exists(f"{self._save_folder}/mutant.parquet"):
+            print(f"No existing DB found in {self._save_folder}, skipping load")
+        else:
+            path = self._save_folder + "/mutant.parquet"
+            self._conn.execute(f"INSERT INTO embeddings SELECT * FROM read_parquet('{path}');")
+
+        # load in the results
+        if not os.path.exists(f"{self._save_folder}/mutant_results.parquet"):
+            print(f"No existing results found in {self._save_folder}, skipping load")
+        else:
+            path = self._save_folder + "/mutant_results.parquet"
+            self._conn.execute(f"INSERT INTO results SELECT * FROM read_parquet('{path}');")
 
     def __del__(self):
+        print("PersistantDuckDB del, about to run persist")
         self.persist()
