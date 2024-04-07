@@ -19,3 +19,4 @@ index_data
 
 venv
 .env
+.mutant

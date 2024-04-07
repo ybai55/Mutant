@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+set -e
+
+function cleanup {
+  docker-compose down --rmi local --volumes
+}
+
+trap cleanup EXIT
+
+docker-compose up --build -d
+
+export MUTANT_INTEGRATION_TEST=1
+export MUTANT_API_IMPL=rest
+export MUTANT_SERVER_HOST=localhost
+export MUTANT_SERVER_HTTP_PORT=8000
+
+python -m pytest
+
