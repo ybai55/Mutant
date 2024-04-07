@@ -154,10 +154,10 @@ class Clickhouse(DB):
     def count(self, model_space=None):
         return self._count(model_space=model_space)[0][0]
 
-    def _delete(self, where={}):
-        uuids_deleted = self._conn.query_dataframe(f"""SELECT uuid FROM embeddings {where}""")
-        self._conn.execute(f"""DELETE FROM embeddings {where}""")
-        return uuids_deleted.uuid.tolist()
+    def _delete(self, where_str=None):
+        uuids_deleted = self._conn.query_dataframe(f"""SELECT uuid FROM embeddings {where_str}""")
+        self._conn.execute(f"""DELETE FROM embeddings {where_str}""")
+        return uuids_deleted.uuid.tolist() if len(uuids_deleted) > 0 else []
 
     def delete(self, where={}):
         if where["model_space"] is None:
