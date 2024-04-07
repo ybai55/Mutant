@@ -30,7 +30,7 @@ def score_and_store(
     ann_index._load(model_space=model_space)
 
     activation_uncertainty_scores = activation_uncertainty(
-        training_dataset=training_data, inference_dataset=unlabeled_data
+        training_data=training_data, unlabeled_data=unlabeled_data
     )
 
     boundary_uncertainty_scores = boundary_uncertainty(

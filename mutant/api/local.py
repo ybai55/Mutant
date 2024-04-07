@@ -85,11 +85,12 @@ class LocalAPI(API):
     def process(
             self, model_space=None, training_dataset_name="training", unlabeled_dataset_name="unlabeled"
     ):
+        model_space = model_space or self.get_model_space()
+
         # Create the index only for the training set.
         self._db.create_index(model_space=model_space, dataset_name=training_dataset_name)
 
         # mutant_telemetry.capture('score_and_store')
-        print("running score_and_store")
         score_and_store(
             training_dataset_name=training_dataset_name,
             unlabeled_dataset_name=unlabeled_dataset_name,
@@ -105,12 +106,12 @@ class LocalAPI(API):
 
         raise NotImplementedError("Cannot get status of job: Celery is not configured")
 
-    def get_results(self, model_space=None, n_results=100, dataset_name="unlabeled"):
+    def get_results(self, model_space=None, n_results=1000, dataset_name="unlabeled"):
         model_space = model_space or self._model_space
         sample_proportions = {
             "activation_uncertainty": 0.3,
             "boundary_uncertainty": 0.3,
-            "representation_cluster_outlier": 0.2,
+            "representative_cluster_outlier": 0.2,
             "random": 0.2,
         }
         raise get_sample(n_samples=n_results,

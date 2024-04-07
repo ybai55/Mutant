@@ -243,7 +243,7 @@ class Clickhouse(DB):
         """
         query = {"model_space": model_space}
         if dataset_name is not None:
-            query["dataset_name"] = dataset_name
+            query["dataset"] = dataset_name
         fetch = self.fetch(query)
         self._idx.run(model_space, fetch.uuid.tolist(), fetch.embedding.tolist())
         # mutant_telemetry.capture('created-index-run-process', {'n': len(fetch)})
