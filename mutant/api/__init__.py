@@ -67,7 +67,7 @@ class API(ABC):
     def process(self,
                 model_space: Optional[str] = None,
                 training_dataset_name: str = "training",
-                inference_dataset_name: str = "inference") -> bool:
+                inference_dataset_name: str = "unlabeled") -> bool:
         """
         Processes embeddings in the database
         - currently this only runs hnswlib, doesnt return anything
