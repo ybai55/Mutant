@@ -98,7 +98,7 @@ class FastAPI(mutant.server.Server):
         return self._api.create_index(process.model_space)
 
     def process(self, process: ProcessEmbedding):
-        self._api.process(process.model_space, process.training_dataset_name, process.inference_dataset_name)
+        self._api.process(process.model_space, process.training_dataset_name, process.unlabeled_dataset_name)
         return True
 
     def get_status(self, task_id):

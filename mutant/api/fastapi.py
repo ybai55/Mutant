@@ -100,7 +100,7 @@ class FastAPI(API):
         return val
 
     def process(
-        self, model_space=None, training_dataset_name="training", unlabeled_dataset_name="inference"
+        self, model_space=None, training_dataset_name="training", unlabeled_dataset_name="unlabeled"
     ):
         """
         Processes embeddings in the database
@@ -108,7 +108,7 @@ class FastAPI(API):
         payload = {
             "model_space": model_space or self._model_space,
             "training_dataset_name": training_dataset_name,
-            "inference_dataset_name": unlabeled_dataset_name,
+            "unlabeled_dataset_name": unlabeled_dataset_name,
         }
         resp = requests.post(self._api_url + "/process", data=json.dumps(payload))
         resp.raise_for_status()

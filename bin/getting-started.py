@@ -16,7 +16,7 @@ mutant_api.add_unlabeled(
     inference_class=["bicycle", "car"],
     model_space="sample_space"
 )
-# mutant_api.process(training_dataset_name="training", inference_dataset_name="production", model_space="sample_space")
+# mutant_api.process(training_dataset_name="training", unlabeled_dataset_name="production", model_space="sample_space")
 # results = mutant_api.get_results(dataset_name="production", n_results=2)
 print(mutant_api.count(model_space="sample_space"))
 
