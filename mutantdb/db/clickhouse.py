@@ -6,7 +6,7 @@ import time
 import os
 import itertools
 import json
-
+from typing import Sequence, Any
 import clickhouse_connect
 
 COLLECTION_TABLE_SCHEMA = [{"uuid": "UUID"}, {"name": "String"}, {"metadata": "String"}]
@@ -40,7 +40,6 @@ def db_schema_to_keys():
 
 
 class Clickhouse(DB):
-    _conn = None
 
     #
     #  INIT METHODS
@@ -48,10 +47,10 @@ class Clickhouse(DB):
     def __init__(self, settings):
         self._conn = clickhouse_connect.get_client(
             host=settings.clickhouse_host, port=int(settings.clickhouse_port)
-        )  # Client(host=settings.clickhouse_host, port=settings.clickhouse_port)
-        self._conn.query(f"""SET allow_experimental_lightweight_delete = true""")
+        )
+        self._conn.query(f"""SET allow_experimental_lightweight_delete = 1;""")
         self._conn.query(
-            f"""SET mutations_sync = 1"""
+            f"""SET mutations_sync = 1;"""
         )  # https://clickhouse.com/docs/en/operations/settings/settings/#mutations_sync
 
         self._create_table_collections()
@@ -79,10 +78,33 @@ class Clickhouse(DB):
     def get_collection_uuid_from_name(self, name):
         res = self._conn.query(
             f"""
-                    SELECT uuid FROM collections WHERE name = '{name}'
-                """
+            SELECT uuid FROM collections WHERE name = '{name}'
+        """
         )
         return res.result_rows[0][0]
+
+    def _create_where_clause(self, collection_uuid, ids=None, where={}):
+        # ensure where only contains strings, as we only support string equality for now
+        for key in where:
+            if not isinstance(where[key], str):
+                raise Exception("Invalid metadata: " + str(where))
+
+        where = " AND ".join([self._filter_metadata(key, value) for key, value in where.items()])
+
+        if ids is not None:
+            # Check if where was created
+            if len(where) > 6:  # NIT: hacky
+                where += " AND "
+
+            where += f" id IN {tuple(ids)}"
+
+        where = f"WHERE {where}"
+
+        if len(where) > 6:  # NIT: hacky
+            where += " AND "
+
+        where += f"collection_uuid = '{collection_uuid}'"
+        return where
 
     #
     #  COLLECTION METHODS
@@ -103,7 +125,7 @@ class Clickhouse(DB):
 
         collection_uuid = uuid.uuid4()
         data_to_insert = []
-        data_to_insert.append([collection_uuid, name, metadata])
+        data_to_insert.append([collection_uuid, name, json.dumps(metadata)])
 
         self._conn.insert("collections", data_to_insert, column_names=["uuid", "name", "metadata"])
         return collection_uuid
@@ -115,35 +137,45 @@ class Clickhouse(DB):
          """
         ).result_rows
 
-    def list_collections(self):
-        return self._conn.query(
-            f"""
-         SELECT * FROM collections
-         """
-        ).result_rows
+    def list_collections(self) -> Sequence[Sequence[str]]:
+        return self._conn.query(f"""SELECT * FROM collections""").result_rows
 
-    def update_collection(self, name=None, metadata=None):
-        # can not cast dict to map in clickhouse so we go through tuple # NIT: maybe not necessary now with formal JSON type
-        metadata = [(key, value) for key, value in metadata.items()]
+    def update_collection(self, current_name, new_name, new_metadata):
+        if new_name is None:
+            new_name = current_name
+        if new_metadata is None:
+            new_metadata = self.get_collection(current_name)[0]
 
-        self._conn.command(
+        return self._conn.command(
             f"""
+
          ALTER TABLE 
             collections 
          UPDATE
-            metadata = {metadata}
+            metadata = {new_metadata}, 
+            name = '{new_name}'
          WHERE 
-            name = '{name}'
+
+            name = '{current_name}'
          """
         )
 
     def delete_collection(self, name):
-        print("clickhouse: delete name is: " + name)
+        collection_uuid = self.get_collection_uuid_from_name(name)
+        self._conn.command(
+            f"""
+        DELETE FROM embeddings WHERE collection_uuid = '{collection_uuid}'
+        """
+        )
+
         self._conn.command(
             f"""
          DELETE FROM collections WHERE name = '{name}'
          """
         )
+
+        self._idx.delete_index(collection_uuid)
+        return True
 
     #
     #  ITEM METHODS
@@ -164,7 +196,9 @@ class Clickhouse(DB):
         return [x[1] for x in data_to_insert]  # return uuids
 
     def _get(self, where={}):
-        return self._conn.query(f"""SELECT {db_schema_to_keys()} FROM embeddings {where}""").result_rows
+        return self._conn.query(
+            f"""SELECT {db_schema_to_keys()} FROM embeddings {where}"""
+        ).result_rows
 
     def _filter_metadata(self, key, value):
         return f" JSONExtractString(metadata,'{key}') = '{value}'"
@@ -179,34 +213,15 @@ class Clickhouse(DB):
         limit=None,
         offset=None,
     ):
+        if collection_name == None and collection_uuid == None:
+            raise TypeError("Arguments collection_name and collection_uuid cannot both be None")
 
         if collection_name is not None:
             collection_uuid = self.get_collection_uuid_from_name(collection_name)
 
         s3 = time.time()
-        # check to see if query is a dict and if it is a flat list of key value<string> pairs
-        if where is not None:
-            if not isinstance(where, dict):
-                raise Exception("Invalid where: " + str(where))
 
-        # ensure metadata only contains strings, as we only support string equality for now
-        for key in where:
-            if not isinstance(where[key], str):
-                raise Exception("Invalid metadata: " + str(where))
-
-        where = " AND ".join([self._filter_metadata(key, value) for key, value in where.items()])
-
-        if ids is not None:
-            if len(where) > 6:  # NIT: hacky
-                where += " AND "
-
-            where += f" id IN {tuple(ids)}"
-
-        where = f"WHERE {where}"
-
-        if len(where) > 6:  # NIT: hacky
-            where += " AND "
-        where += f"collection_uuid = '{collection_uuid}'"
+        where = self._create_where_clause(collection_uuid, ids=ids, where=where)
 
         if sort is not None:
             where += f" ORDER BY {sort}"
@@ -236,8 +251,7 @@ class Clickhouse(DB):
         return self._count(collection_uuid=collection_uuid)[0][0]
 
     def _delete(self, where_str=None):
-        uuids_deleted = self._conn.query(f"""SELECT uuid FROM embeddings {where_str}""").result_rows
-
+        deleted_uuids = self._conn.query(f"""SELECT uuid FROM embeddings {where_str}""").result_rows
         self._conn.command(
             f"""
             DELETE FROM
@@ -245,34 +259,24 @@ class Clickhouse(DB):
         {where_str}
         """
         )
-        return uuids_deleted.uuid.tolist() if len(uuids_deleted) > 0 else []
+        return [res[0] for res in deleted_uuids] if len(deleted_uuids) > 0 else []
 
     def delete(self, where={}, collection_name=None, collection_uuid=None, ids=None):
+        if collection_name == None and collection_uuid == None:
+            raise TypeError("Arguments collection_name and collection_uuid cannot both be None")
+
         if collection_name is not None:
             collection_uuid = self.get_collection_uuid_from_name(collection_name)
 
         s3 = time.time()
-        # check to see if query is a dict and if it is a flat list of key value pairs
-        if where is not None:
-            if not isinstance(where, dict):
-                raise Exception("Invalid where: " + str(where))
+        where_str = self._create_where_clause(collection_uuid, ids=ids, where=where)
 
-            # ensure where is a flat dict
-            for key in where:
-                if isinstance(where[key], dict):
-                    raise Exception("Invalid where: " + str(where))
-
-        where_str = " AND ".join([f"{key} = '{value}'" for key, value in where.items()])
-
-        if where_str:
-            where_str = f"WHERE {where_str}"
         deleted_uuids = self._delete(where_str)
         print(f"time to get {len(deleted_uuids)} embeddings for deletion: ", time.time() - s3)
 
-        if len(where) == 1:
-            self._idx.delete(collection_uuid)
-        else:
-            self._idx.delete_from_index(collection_uuid, deleted_uuids)
+        # if len(where) == 1:
+        #     self._idx.delete(collection_uuid)
+        self._idx.delete_from_index(collection_uuid, deleted_uuids)
 
         return deleted_uuids
 
@@ -291,6 +295,7 @@ class Clickhouse(DB):
             collection_uuid = self.get_collection_uuid_from_name(collection_name)
 
         results = self.get(collection_uuid=collection_uuid, where=where)
+
         if len(results) > 0:
             ids = [x[1] for x in results]
         else:
@@ -300,11 +305,17 @@ class Clickhouse(DB):
             collection_uuid, embeddings, n_results, ids
         )
 
-        return {
-            "ids": uuids,
-            "embeddings": self.get_by_ids(uuids[0]),
-            "distances": distances.tolist()[0],
-        }
+        return_data = []
+        for uuidArray, distanceArray in zip(uuids, distances):
+            item = {}
+            item["items"] = []
+            item["distances"] = []
+            for uuid, distance in zip(uuidArray, distanceArray):
+                item["items"].append(self.get_by_ids([uuid])[0])
+                item["distances"].append(distance.tolist())
+            return_data.append(item)
+
+        return return_data
 
     def create_index(self, collection_uuid) -> None:
         """Create an index for a collection_uuid and optionally scoped to a dataset.
@@ -315,7 +326,11 @@ class Clickhouse(DB):
             None
         """
         get = self.get(collection_uuid=collection_uuid)
-        self._idx.run(collection_uuid, get.uuid.tolist(), get.query_embedding.tolist())
+
+        uuids = [x[1] for x in get]
+        embeddings = [x[2] for x in get]
+
+        self._idx.run(collection_uuid, uuids, embeddings)
         # mutant_telemetry.capture('created-index-run-process', {'n': len(get)})
 
     def add_incremental(self, collection_uuid, uuids, embeddings):

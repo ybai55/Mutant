@@ -1,4 +1,4 @@
-# Sanity check script to ensure that the Chroma client can connect
+# Sanity check script to ensure that the Mutant client can connect
 # and is capable of recieving data.
 import mutantdb
 from mutantdb.config import Settings

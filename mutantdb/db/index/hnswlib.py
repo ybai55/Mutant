@@ -7,9 +7,11 @@ import hnswlib
 import numpy as np
 from mutantdb.db.index import Index
 from mutantdb.logger import logger
+from mutantdb.errors import NoIndexException
 
 
 class Hnswlib(Index):
+
     _collection_uuid = None
     _index = None
     _index_metadata = {
@@ -22,7 +24,7 @@ class Hnswlib(Index):
     _uuid_to_id = {}
 
     def __init__(self, settings):
-        self._save_folder = settings.mutant_cache_dir + "/index"
+        self._save_folder = settings.persist_directory + "/index"
 
     def run(self, collection_uuid, uuids, embeddings, space="l2", ef=10, num_threads=4):
 
@@ -158,6 +160,9 @@ class Hnswlib(Index):
         if self._collection_uuid != collection_uuid:
             self._load(collection_uuid)
 
+        if self._index is None:
+            raise NoIndexException("Index not found, please create an instance before querying")
+
         s2 = time.time()
         # get ids from uuids as a set, if they are available
         ids = {}
@@ -191,3 +196,17 @@ class Hnswlib(Index):
         # recreate the directory
         if not os.path.exists(f"{self._save_folder}"):
             os.makedirs(f"{self._save_folder}")
+
+    def delete_index(self, uuid):
+        uuid = str(uuid)
+        if self._collection_uuid == uuid:
+            _index = None
+            _collection_uuid = None
+            _index_metadata = None
+            _id_to_uuid = {}
+            _uuid_to_id = {}
+
+        if os.path.exists(f"{self._save_folder}"):
+            for f in os.listdir(f"{self._save_folder}"):
+                if uuid in f:
+                    os.remove(os.path.join(f"{self._save_folder}", f))

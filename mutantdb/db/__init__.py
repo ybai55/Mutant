@@ -1,8 +1,9 @@
 from abc import ABC, abstractmethod
+from typing import Sequence, Any
+from mutantdb.api.types import Item
 
 
 class DB(ABC):
-
     @abstractmethod
     def __init__(self):
         pass
@@ -16,7 +17,7 @@ class DB(ABC):
         pass
 
     @abstractmethod
-    def list_collections(self):
+    def list_collections(self) -> Sequence[Sequence[str]]:
         pass
 
     @abstractmethod
@@ -48,7 +49,7 @@ class DB(ABC):
         pass
 
     @abstractmethod
-    def delete(self, where):
+    def delete(self, ids, where):
         pass
 
     @abstractmethod

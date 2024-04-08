@@ -1,7 +1,6 @@
 import time
-from typing import Dict, Optional
+from typing import Dict, Optional, Sequence
 from mutantdb.api import API
-from mutantdb.utils.sampling import score_and_store, get_sample
 from mutantdb.server.utils.telemetry.capture import Capture
 from mutantdb.api.models.Collection import Collection
 
@@ -22,7 +21,6 @@ def is_valid_index_name(index_name):
 
 
 class LocalAPI(API):
-
     def __init__(self, settings, db):
         self._db = db
         self._mutant_telemetry = Capture()
@@ -38,34 +36,42 @@ class LocalAPI(API):
         self,
         name: str,
         metadata: Optional[Dict] = None,
-    ) -> int:
+    ) -> Collection:
         if not is_valid_index_name(name):
             raise ValueError("Invalid index name: %s" % name)  # NIT: tell the user why
 
         self._db.create_collection(name, metadata)
-        return Collection(self, name)
+        return Collection(client=self, name=name)
 
     def get_collection(
         self,
         name: str,
-    ) -> int:
+    ) -> Collection:
         self._db.get_collection(name)
-        return Collection(self, name)
+        return Collection(client=self, name=name)
 
     def _get_collection_db(self, name: str) -> int:
         return self._db.get_collection(name)
 
-    def list_collections(self) -> list:
-        return self._db.list_collections()
+    def list_collections(self) -> Sequence[Collection]:
+        collections = []
+        db_collections = self._db.list_collections()
+        for db_collection in db_collections:
+            collections.append(Collection(client=self, name=db_collection[1]))
+        return collections
 
-    # TODO: this need to actually do what the API says
-    def update_collection(
+    def modify(
         self,
-        name: str,
-        metadata: Optional[Dict] = None,
-    ) -> int:
+        current_name: str,
+        new_name: Optional[str] = None,
+        new_metadata: Optional[Dict] = None,
+    ):
         # NIT: make sure we have a valid name like we do in create
-        return self._db.update_collection(name, metadata)
+        if new_name is not None:
+            if not is_valid_index_name(new_name):
+                raise ValueError("Invalid index name: %s" % new_name)
+
+        self._db.update_collection(current_name, new_name, new_metadata)
 
     def delete_collection(self, name: str) -> int:
         return self._db.delete_collection(name)
@@ -73,13 +79,13 @@ class LocalAPI(API):
     #
     # ITEM METHODS
     #
-    def add(
+    def _add(
         self,
+        ids,
         collection_name: str,
         embeddings,
         metadatas=None,
         documents=None,
-        ids=None,
         increment_index=True,
     ):
 
@@ -131,7 +137,7 @@ class LocalAPI(API):
 
         return True  # NIT: should this return the ids of the succesfully added items?
 
-    def update(self, collection_name: str, embedding, metadata=None):
+    def _update(self, collection_name: str, embedding, metadata=None):
 
         number_of_embeddings = len(embedding)
 
@@ -159,7 +165,7 @@ class LocalAPI(API):
 
         return True
 
-    def get(
+    def _get(
         self,
         collection_name,
         ids=None,
@@ -187,12 +193,15 @@ class LocalAPI(API):
             offset=offset,
         )
 
-    def delete(self, collection_name, where={}):
+    def _delete(self, collection_name, ids=None, where=None):
 
-        deleted_uuids = self._db.delete(collection_name=collection_name, where=where)
+        if where is None:
+            where = {}
+
+        deleted_uuids = self._db.delete(collection_name=collection_name, where=where, ids=ids)
         return deleted_uuids
 
-    def count(self, collection_name):
+    def _count(self, collection_name):
 
         return self._db.count(collection_name=collection_name)
 
@@ -201,10 +210,13 @@ class LocalAPI(API):
         self._db.reset()
         return True
 
-    def query(self, collection_name, query_embeddings, n_results=10, where={}):
+    def _query(self, collection_name, query_embeddings, n_results=10, where={}):
 
         return self._db.get_nearest_neighbors(
-            collection_name=collection_name, where=where, embeddings=query_embeddings, n_results=n_results
+            collection_name=collection_name,
+            where=where,
+            embeddings=query_embeddings,
+            n_results=n_results,
         )
 
     def raw_sql(self, raw_sql):
@@ -217,6 +229,5 @@ class LocalAPI(API):
         self._db.create_index(collection_uuid=collection_uuid)
         return True
 
-    def peek(self, collection_name, n=10):
-
-        return self.get(collection_name=collection_name, limit=n)
+    def _peek(self, collection_name, n=10):
+        return self._get(collection_name=collection_name, limit=n)

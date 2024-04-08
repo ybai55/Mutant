@@ -4,11 +4,11 @@ from typing import Union, Any
 
 # type supports single and batch mode
 class AddEmbedding(BaseModel):
-    collection_name: Union[str, list]
     embeddings: list
-    metadatas: Union[list, list] = None
+    metadatas: Union[list, dict] = None
     documents: Union[str, list] = None
     ids: Union[str, list] = None
+    increment_index: bool = True
 
 
 class QueryEmbedding(BaseModel):
@@ -44,7 +44,8 @@ class SpaceKeyInput(BaseModel):
 
 
 class DeleteEmbedding(BaseModel):
-    where: dict = {}
+    ids: list = None
+    where: dict = None
 
 
 class CreateCollection(BaseModel):
@@ -53,4 +54,5 @@ class CreateCollection(BaseModel):
 
 
 class UpdateCollection(BaseModel):
-    metadata: dict = None
+    new_name: str = None
+    new_metadata: dict = None
