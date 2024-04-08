@@ -1,7 +1,7 @@
 import mutant
 from mutant.config import Settings
 
-mutant_api = mutant.get_api()
+mutant_api = mutant.init()
 
 mutant_api.add_training(
     embedding=[[1.1, 2.3, 3.2], [4.5, 6.9, 4.4]],

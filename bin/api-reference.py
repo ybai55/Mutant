@@ -4,10 +4,10 @@ import mutant
 from mutant.config import Settings
 
 # run in in-memory mode
-mutant_api = mutant.get_api()
+mutant_api = mutant.init()
 
 # uncomment to run in client-server mode
-# mutant_api = mutant.get_api(Settings(mutant_api_impl="rest",
+# mutant_api = mutant.init(Settings(mutant_api_impl="rest",
 #                               mutant_server_host="localhost",
 #                               mutant_server_http_port="8000") )
 

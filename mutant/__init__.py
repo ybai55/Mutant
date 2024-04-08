@@ -42,7 +42,7 @@ def get_db(settings=__settings):
         raise Exception(f"Unknown value '{setting} for mutant_db_impl")
 
 
-def get_api(settings=__settings):
+def init(settings=__settings):
     """Return a mutant. API instance based on the provided or environmental
     settings, optionally overriding the DB instance."""
     setting = settings.mutant_api_impl.lower()

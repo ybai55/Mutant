@@ -21,4 +21,4 @@ source venv/bin/activate
 
 pip install $tarball
 
-python -c "import mutant; api = mutant.get_apit(); print(api.heartbeat())"
+python -c "import mutant; api = mutant.init(); print(api.heartbeat())"

@@ -35,7 +35,7 @@ Mutant can be run via 3 modes:
 
 ```python
 import mutant
-api = mutant.get_api()
+api = mutant.init()
 print(api.heartbeat())
 ```
 pip install -r requirements_dev.txt
@@ -47,7 +47,7 @@ This by default saves your db and your indexes to a `.mutant` directory and can 
 ```python
 import mutant
 from mutant.config import Settings
-api = mutant.get_api(Settings(mutant_db_impl="duckdb+parquet"))
+api = mutant.init(Settings(mutant_db_impl="duckdb+parquet"))
 print(api.heartbeat())
 ```
 
@@ -57,7 +57,7 @@ Run `docker-compose up -d --build`
 ```python
 import mutant
 from mutant.config import Settings
-api = mutant.get_api(Settings(mutant_api_impl="rest",
+api = mutant.init(Settings(mutant_api_impl="rest",
                               mutant_server_host="localhost",
                               mutant_server_http_port="8000") )
 

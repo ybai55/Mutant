@@ -13,7 +13,7 @@ from requests.exceptions import ConnectionError
 
 @pytest.fixture
 def local_api():
-    return mutant.get_api(
+    return mutant.init(
         mutant.config.Settings(
             mutant_api_impl="local", mutant_db_impl="duckdb", mutant_cache_dir=tempfile.gettempdir()
         )
@@ -22,11 +22,11 @@ def local_api():
 
 @pytest.fixture
 def fastapi_integration_api():
-    return mutant.get_api()  # configured by environment variables
+    return mutant.init()  # configured by environment variables
 
 
 def _build_fastapi_api():
-    return mutant.get_api(
+    return mutant.init(
         Settings(
             mutant_api_impl="rest", mutant_server_host="localhost", mutant_server_http_port="6666"
         )

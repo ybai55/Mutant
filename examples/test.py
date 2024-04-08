@@ -83,7 +83,7 @@ class EmbeddingHook:
 embedding_hook = EmbeddingHook(model.fc2)
 
 
-mutant_client = mutant.get_api()
+mutant_client = mutant.init()
 
 # Send training data to Chroma
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=64)

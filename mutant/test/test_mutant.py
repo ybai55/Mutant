@@ -40,7 +40,7 @@ class GetAPITest(unittest.TestCase):
     @patch("mutant.api.local.LocalAPI", autospec=True)
     @patch.dict(os.environ, {}, clear=True)
     def test_local(self, mock_api, mock_db):
-        api = mutant.get_api(mutant.config.Settings(mutant_cache_dir="./foo"))
+        api = mutant.init(mutant.config.Settings(mutant_cache_dir="./foo"))
         assert mock_api.called
         assert mock_db.called
 
@@ -48,7 +48,7 @@ class GetAPITest(unittest.TestCase):
     @patch("mutant.api.celery.CeleryAPI", autospec=True)
     @patch.dict(os.environ, {}, clear=True)
     def test_celery(self, mock_api, mock_db):
-        api = mutant.get_api(
+        api = mutant.init(
             mutant.config.Settings(
                 mutant_api_impl="celery",
                 mutant_cache_dir="./foo",
@@ -62,7 +62,7 @@ class GetAPITest(unittest.TestCase):
     @patch("mutant.api.fastapi.FastAPI", autospec=True)
     @patch.dict(os.environ, {}, clear=True)
     def test_fastapi(self, mock):
-        api = mutant.get_api(
+        api = mutant.init(
             mutant.config.Settings(
                 mutant_api_impl="rest",
                 mutant_cache_dir="./foo",
@@ -75,7 +75,7 @@ class GetAPITest(unittest.TestCase):
     @patch("mutant.api.arrowflight.ArrowFlightAPI", autospec=True)
     @patch.dict(os.environ, {}, clear=True)
     def test_arrowflight(self, mock):
-        api = mutant.get_api(
+        api = mutant.init(
             mutant.config.Settings(
                 mutant_api_impl="arrowflight",
                 mutant_cache_dir="./foo",

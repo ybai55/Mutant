@@ -21,7 +21,7 @@ class FastAPI(mutant.server.Server):
     def __init__(self, settings):
         super().__init__(settings)
         self._app = fastapi.FastAPI(debug=True)
-        self._api = mutant.get_api()
+        self._api = mutant.init()
 
         self.router = fastapi.APIRouter()
         self.router.add_api_route("/api/v1", self.root, methods=["GET"])
