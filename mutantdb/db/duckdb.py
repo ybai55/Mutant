@@ -217,6 +217,10 @@ class DuckDB(Clickhouse):
         self._idx.reset()
         self._idx = Hnswlib(self._settings)
 
+    def __del__(self):
+        print("Existing: Cleaning up .mutant directory")
+        self._idx.reset()
+
 
 class PersistentDuckDB(DuckDB):
 
@@ -224,6 +228,12 @@ class PersistentDuckDB(DuckDB):
 
     def __init__(self, settings):
         super().__init__(settings=settings)
+
+        if settings.persist_directory == ".mutant":
+            raise Exception(
+                "You cannot use the mutant's cache directory, please set a different directory"
+            )
+
         self._save_folder = settings.persist_directory
         self.load()
 
