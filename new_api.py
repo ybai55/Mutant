@@ -6,18 +6,29 @@ import mutantdb
 from mutantdb.config import Settings
 
 client = mutantdb.Client()
+print(client)
 # client = mutantdb.Client(Settings(mutant_api_impl="rest", mutant_server_host="localhost", mutant_server_http_port="8000"))
 
 # client.heartbeat()
+print(client.heartbeat())
 client.reset() 
 # client.list_collections()
-collection = client.create_collection(collection_name="test")
+collection = client.create_collection(name="test")
 # getcollection = client.get_collection(name="test")
 # collection.count()
 # client.raw_sql("SELECT * FROM embeddings;")
 # collection.peek(5)
+print(collection)
+getcollection = client.get_collection(name="test")
+print(getcollection)
+print(collection.count())
 
 # add many
+collection2 = client.create_collection(name="test2")
+client.delete_collection(name="test2")
+print(client.list_collections())
+
+# # add many
 collection.add( 
     embeddings=[[1.1, 2.3, 3.2], [4.5, 6.9, 4.4], [1.1, 2.3, 3.2], [4.5, 6.9, 4.4], [1.1, 2.3, 3.2], [4.5, 6.9, 4.4], [1.1, 2.3, 3.2], [4.5, 6.9, 4.4]],
     metadatas=[{"uri": "img1.png", "style": "style1"}, {"uri": "img2.png", "style": "style2"}, {"uri": "img3.png", "style": "style1"}, {"uri": "img4.png", "style": "style1"}, {"uri": "img5.png", "style": "style1"}, {"uri": "img6.png", "style": "style1"}, {"uri": "img7.png", "style": "style1"}, {"uri": "img8.png", "style": "style1"}],
@@ -26,6 +37,7 @@ collection.add(
 )
 
 # add one
+# # add one
 collection.add(
     embeddings=[1.5, 2.9, 3.4],
     metadatas={"uri": "img9.png", "style": "style1"},
@@ -33,11 +45,24 @@ collection.add(
     ids="uri9",
 )
 
+print(collection.peek(5))
+print(collection.count()) # NIT: count count take a filter too
+
 # doesnt work in clickhouse yet because of metadata filtering
 # print(collection.get(
 #     ids=["id1", "id2"],
 #     where={"style": "style1", "uri": "img2.png"},
 # ))
+print("get ids", collection.get(
+    ids=["id1", "id2"],
+))
+print(" get where", collection.get(
+    where={"style": "style1", "uri": "img2.png"},
+))
+print("get both", collection.get(
+    ids=["id1", "id2"],
+    where={"style": "style1"},
+))
 
 # # supports multiple at once 
 print("query", collection.query( 

@@ -51,7 +51,7 @@ class FastAPI(mutantdb.server.Server):
         return self._api.list_collections()
 
     def create_collection(self, collection: CreateCollection):
-        return self._api.create_collection(collection_name=collection.name,
+        return self._api.create_collection(name=collection.name,
                                            metadata=collection.metadata
                                            )
 
@@ -59,7 +59,7 @@ class FastAPI(mutantdb.server.Server):
         return self._api.get_collection(collection_name)
 
     def update_collection(self, collection_name, collection: UpdateCollection):
-        return self._api.update_collection(collection_name=collection_name,
+        return self._api.update_collection(name=collection_name,
                                            metadata=collection.metadata
                                            )
 
