@@ -1,5 +1,4 @@
-from typing import Union, Sequence, Dict, TypedDict
-import json
+from typing import Union, Sequence, Dict, TypedDict, Protocol
 
 ID = str
 IDs = list[ID]
@@ -28,3 +27,7 @@ class QueryResult(TypedDict):
     documents: list[list[Document]]
     metadatas: list[list[Metadata]]
     distances: list[list[float]]
+
+class EmbeddingFunction(Protocol):
+    def __call__(self, texts: Documents) -> Embeddings:
+        ...
