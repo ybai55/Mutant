@@ -88,9 +88,7 @@ batch_records = {
     "embedding": [[1.1, 2.3, 3.2], [1.2, 2.24, 3.2]],
     "input_uri": ["https://example.com", "https://example.com"],
     "dataset": ["training", "training"],
-    # "inference_class": ["knife", "person"],
     "model_space": ["test_space", "test_space"],
-    # "label_class": ["person", "person"],
 }
 
 
@@ -125,7 +123,6 @@ minimal_records = {
     "embedding": [[1.1, 2.3, 3.2], [1.2, 2.24, 3.2]],
     "input_uri": ["https://example.com", "https://example.com"],
     "dataset": "training",
-    # "inference_class": ["person", "person"],
     "model_space": "test_space",
 }
 
