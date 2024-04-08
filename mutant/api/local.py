@@ -20,8 +20,8 @@ class LocalAPI(API):
             embedding,
             input_uri=None,
             dataset=None,
-            inference_class=None,
-            label_class=None,
+            # inference_class=None,
+            # label_class=None,
     ):
 
         model_space = model_space or self.get_model_space()
@@ -42,7 +42,7 @@ class LocalAPI(API):
         else:
             ds = dataset
 
-        self._db.add(model_space, embedding, input_uri, ds, inference_class, label_class)
+        self._db.add(model_space, embedding, input_uri, ds)#, inference_class, label_class)
 
         return True
 
@@ -83,40 +83,40 @@ class LocalAPI(API):
         self._db.create_index(model_space=model_space, dataset_name=dataset_name)
         return True
 
-    def process(
-            self, model_space=None, training_dataset_name="training", unlabeled_dataset_name="unlabeled"
-    ):
-        model_space = model_space or self.get_model_space()
+    # def process(
+    #         self, model_space=None, training_dataset_name="training", unlabeled_dataset_name="unlabeled"
+    # ):
+    #     model_space = model_space or self.get_model_space()
+    #
+    #     # Create the index only for the training set.
+    #     self._db.create_index(model_space=model_space, dataset_name=training_dataset_name)
+    #
+    #     # mutant_telemetry.capture('score_and_store')
+    #     score_and_store(
+    #         training_dataset_name=training_dataset_name,
+    #         unlabeled_dataset_name=unlabeled_dataset_name,
+    #         db_connection=self._db,
+    #         ann_index=self._db._idx,  # TODO: Breaks encapsulating should fix
+    #         model_space=model_space,
+    #     )
+    #
+    #     # self.create_index(model_space)
+    #     return True
 
-        # Create the index only for the training set.
-        self._db.create_index(model_space=model_space, dataset_name=training_dataset_name)
+    # def get_task_status(self, task_id):
+    #
+    #     raise NotImplementedError("Cannot get status of job: Celery is not configured")
 
-        # mutant_telemetry.capture('score_and_store')
-        score_and_store(
-            training_dataset_name=training_dataset_name,
-            unlabeled_dataset_name=unlabeled_dataset_name,
-            db_connection=self._db,
-            ann_index=self._db._idx,  # TODO: Breaks encapsulating should fix
-            model_space=model_space,
-        )
-
-        # self.create_index(model_space)
-        return True
-
-    def get_task_status(self, task_id):
-
-        raise NotImplementedError("Cannot get status of job: Celery is not configured")
-
-    def get_results(self, model_space=None, n_results=1000, dataset_name="unlabeled"):
-        model_space = model_space or self._model_space
-        sample_proportions = {
-            "activation_uncertainty": 0.3,
-            "boundary_uncertainty": 0.3,
-            "representative_cluster_outlier": 0.2,
-            "random": 0.2,
-        }
-        raise get_sample(n_samples=n_results,
-                         sample_proportions=sample_proportions,
-                         db_connection=self._db,
-                         model_space=model_space,
-                         dataset_name=dataset_name)
+    # def get_results(self, model_space=None, n_results=1000, dataset_name="unlabeled"):
+    #     model_space = model_space or self._model_space
+    #     sample_proportions = {
+    #         "activation_uncertainty": 0.3,
+    #         "boundary_uncertainty": 0.3,
+    #         "representative_cluster_outlier": 0.2,
+    #         "random": 0.2,
+    #     }
+    #     raise get_sample(n_samples=n_results,
+    #                      sample_proportions=sample_proportions,
+    #                      db_connection=self._db,
+    #                      model_space=model_space,
+    #                      dataset_name=dataset_name)
