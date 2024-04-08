@@ -18,8 +18,8 @@ EMBEDDING_TABLE_SCHEMA = [
     {'collection_uuid': 'UUID'},
     {'uuid': 'UUID'},
     {'embedding': 'Array(Float64)'},
-    {'input_uri': 'String'},
-    {'dataset': 'String'},
+    {'document': 'Nullable(String)'},
+    {'id': 'Nullable(String)'},
     {'metadata': 'Map(String, String)'}
 ]
 
@@ -115,12 +115,12 @@ class Clickhouse(DB):
          DELETE FROM collections WHERE name = '{name}'
          ''')
 
-    def add(self, collection_uuid, embedding, metadata=None):
+    def add(self, collection_uuid, embedding, metadata=None, documents=None, ids=None):
         data_to_insert = []
         for i in range(len(embedding)):
-            data_to_insert.append([collection_uuid, uuid.uuid4(), embedding[i], metadata[i]])
+            data_to_insert.append([collection_uuid, uuid.uuid4(), embedding[i], metadata[i], documents[i], ids[i]])
 
-        insert_string = "collection_uuid, uuid, embedding, metadata"
+        insert_string = "collection_uuid, uuid, embedding, metadata, document, id"
 
         self._conn.execute(f'''
          INSERT INTO embeddings ({insert_string}) VALUES''', data_to_insert)
@@ -134,9 +134,6 @@ class Clickhouse(DB):
         return f" AND metadata['{key}'] = '{value}'"
 
     def fetch(self, where={}, sort=None, limit=None, offset=None):
-        # if where["collection_name"] is None:
-        #     return {"error": "collection_name is required"}
-
         if "collection_name" in where:
             collection_uuid = self.get_collection(where["collection_name"]).iloc[0].uuid
             del where["collection_name"]

@@ -29,12 +29,11 @@ class DB(ABC):
 
     @abstractmethod
     def add(self,
-            collection_name: str,
+            collection_uuid: str,
             embedding,
-            input_uri,
-            dataset=None,
-            custom_quality_score=None,
-            metadata=None
+            metadata=None,
+            documents=None,
+            ids=None
             ):
         pass
 

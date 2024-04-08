@@ -84,22 +84,19 @@ class DuckDB(Clickhouse):
         self._conn.execute("LOAD 'json';")
 
     # the execute many syntax is different than clickhouse, the (?,?) syntax is different than clickhouse
-    def add(self, collection_uuid, embedding, metadata=None):
+    def add(self, collection_uuid, embedding, metadata=None, documents=None, ids=None):
 
         # look up collection uuid
         # collection_uuid = self.get_collection(collection_uuid)['uuid'].values[0]
-        raise Exception("collection_uuid: " + str(collection_uuid))
-
         metadata = [json.dumps(x) if not isinstance(x, str) else x for x in metadata]
 
         data_to_insert = []
         for i in range(len(embedding)):
-            data_to_insert.append([collection_uuid[i], str(uuid.uuid4()), embedding[i], metadata[i]])
+            data_to_insert.append([collection_uuid[i], str(uuid.uuid4()), embedding[i], metadata[i], documents[i], ids[i]])
 
-        print(data_to_insert)
-        insert_string = "collection_uuid, uuid, embedding, metadata"
+        insert_string = "collection_uuid, uuid, embedding, metadata, document, id"
         self._conn.executemany(f'''
-         INSERT INTO embeddings ({insert_string}) VALUES (?,?,?,?)''', data_to_insert)
+         INSERT INTO embeddings ({insert_string}) VALUES (?,?,?,?,?,?)''', data_to_insert)
 
     def count(self, collection_name=None):
         collection_uuid = self.get_collection(collection_name).iloc[0].uuid
