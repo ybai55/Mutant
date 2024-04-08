@@ -56,8 +56,6 @@ class FastAPI(mutant.server.Server):
             input_uri=add.input_uri,
             dataset=add.dataset,
             metadata=add.metadata,
-            # inference_class=add.inference_class,
-            # label_class=add.label_class,
         )
 
     def fetch(self, fetch: FetchEmbedding):

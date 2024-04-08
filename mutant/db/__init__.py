@@ -16,8 +16,6 @@ class DB(ABC):
             custom_quality_score=None,
             metadata=None,
             ):
-            # inference_class=None,
-            # label_class=None):
         pass
 
     @abstractmethod

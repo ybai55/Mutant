@@ -16,9 +16,7 @@ EMBEDDING_TABLE_SCHEMA = [
     {'embedding': 'Array(Float64)'},
     {'input_uri': 'String'},
     {'dataset': 'String'},
-    {'metadata': 'JSON'},
-    # {'inference_class': 'String'},
-    # {'label_class': 'Nullable(String)'},
+    {'metadata': 'MAP(String, String)'}
 ]
 
 # RESULTS_TABLE_SCHEMA = [
@@ -62,8 +60,6 @@ class Clickhouse(DB):
         ) ENGINE = MergeTree() ORDER BY model_space"""
         )
 
-        self._conn.execute(
-            f'''SET allow_experimental_object_type = true''')   # https://clickhouse.com/docs/en/sql-reference/data-types/json/
         self._conn.execute(f"""SET allow_experimental_lightweight_delete = true""")
         # https://clickhouse.com/docs/en/operations/settings/settings/#mutations_sync
         self._conn.execute(f"""SET mutations_sync = 1""")
@@ -88,9 +84,7 @@ class Clickhouse(DB):
         embedding,
         input_uri,
         dataset=None,
-        metadata=None,
-        # inference_class=None,
-        # label_class=None,
+        metadata=None
     ):
         data_to_insert = []
         for i in range(len(embedding)):
@@ -101,18 +95,19 @@ class Clickhouse(DB):
                     embedding[i],
                     input_uri[i],
                     dataset[i],
-                    # inference_class[i],
-                    # (label_class[i] if label_class is not None else None),
+                    metadata[i]
                 ]
             )
 
-        insert_string = (
-            "model_space, uuid, embedding, input_uri, dataset, metadata" #, inference_class, label_class"
-        )
+        print("data_to_insert:", data_to_insert[0])
+        insert_string = "model_space, uuid, embedding, input_uri, dataset, metadata"
         self._conn.execute(f"""INSERT INTO embeddings ({insert_string}) VALUES """, data_to_insert)
 
     def _fetch(self, where={}):
         return self._conn.query_dataframe(f"""SELECT {db_schema_to_keys()} FROM embeddings {where}""")
+
+    def _filter_metadata(self, key, value):
+        return f" AND metadata['{key}'] = '{value}'"
 
     def fetch(self, where={}, sort=None, limit=None, offset=None):
         if where["model_space"] is None:
@@ -125,11 +120,21 @@ class Clickhouse(DB):
                 raise Exception("Invalid where: " + str(where))
 
             # ensure where is a flat dict
-            for key in where:
-                if isinstance(where[key], dict):
-                    raise Exception("Invalid where: " + str(where))
+            # for key in where:
+            #     if isinstance(where[key], dict):
+            #         raise Exception("Invalid where: " + str(where))
+
+        metadata_query = None
+        # if where has a metadata key, we need to do a special query
+        if "metadata" in where:
+            metadata_query = where["metadata"]
+            del where["metadata"]
 
         where = " AND ".join([f"{key} = '{value}'" for key, value in where.items()])
+
+        if metadata_query is not None:
+            for key, value in metadata_query.items():
+                where += self._filter_metadata(key, value)
 
         if where:
             where = f"WHERE {where}"

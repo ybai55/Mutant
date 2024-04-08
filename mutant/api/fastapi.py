@@ -55,8 +55,6 @@ class FastAPI(API):
             dataset=None,
             metadata=None,
             ):
-            # inference_class=None,
-            # label_class=None):
         """
         Adds a batch of embeddings to the database
         - pass in column oriented data lists
@@ -73,8 +71,6 @@ class FastAPI(API):
                     "input_uri": input_uri,
                     "dataset": dataset,
                     "metadata": metadata,
-                    # "inference_class": inference_class,
-                    # "label_class": label_class,
                 }
             ),
         )

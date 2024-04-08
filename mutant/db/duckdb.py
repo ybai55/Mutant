@@ -10,6 +10,7 @@ import pandas as pd
 import duckdb
 import uuid
 import itertools
+import json
 
 
 def clickhouse_to_duckdb_schema(table_schema):
@@ -24,6 +25,8 @@ def clickhouse_to_duckdb_schema(table_schema):
             item[list(item.keys())[0]] = 'STRING'
         if 'FLOAT64' in item[list(item.keys())[0]]:
             item[list(item.keys())[0]] = 'REAL'
+        if 'MAP(STRING, STRING)' in item[list(item.keys())[0]]:
+            item[list(item.keys())[0]] = 'JSON'
 
     return table_schema
 
@@ -66,9 +69,9 @@ class DuckDB(Clickhouse):
         input_uri,
         dataset=None,
         metadata=None,
-        # inference_class=None,
-        # label_class=None,
     ):
+        metadata = [json.dumps(x) if not isinstance(x, str) else x for x in metadata]
+
         data_to_insert = []
         for i in range(len(embedding)):
             data_to_insert.append(
@@ -78,13 +81,12 @@ class DuckDB(Clickhouse):
                     embedding[i],
                     input_uri[i],
                     dataset[i],
-                    # inference_class[i],
-                    # (label_class[i] if label_class is not None else None),
+                    metadata[i]
                 ]
             )
 
         insert_string = (
-            "model_space, uuid, embedding, input_uri, dataset, metadata" #, inference_class, label_class"
+            "model_space, uuid, embedding, input_uri, dataset, metadata"
         )
         self._conn.executemany(
             f"""
@@ -94,6 +96,9 @@ class DuckDB(Clickhouse):
 
     def count(self, model_space=None):
         return self._count(model_space=model_space).fetchall()[0][0]
+
+    def _filter_metadata(self, key, value):
+        return f" ADD json_extract_string(metadata, '$.{key}' = '{value}')"
 
     def _fetch(self, where=""):
         val = self._conn.execute(f"""SELECT {db_schema_to_keys()} FROM embeddings {where}""").df()
@@ -131,6 +136,9 @@ class DuckDB(Clickhouse):
                 uuid IN ({','.join([("'" + str(x) + "'") for x in ids])})
         """
         ).df()
+
+    def raw_sql(self, sql):
+        return self._conn.execute(sql).df()
 
     # def delete_results(self, model_space):
     #     self._conn.execute(f"DELETE FROM results WHERE model_space = '{model_space}'")
@@ -215,6 +223,7 @@ class PersistentDuckDB(DuckDB):
         """
         Persist the database to disk
         """
+        print("Persisting DB to disk, putting it in the save folder", self._save_folder)
         if self._conn is None:
             return
 
