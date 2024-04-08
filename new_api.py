@@ -11,10 +11,11 @@ client = mutantdb.Client()
 # client.heartbeat()
 client.reset() 
 # client.list_collections()
-collection = client.create_collection(name="test")
+collection = client.create_collection(collection_name="test")
 # getcollection = client.get_collection(name="test")
 # collection.count()
 # client.raw_sql("SELECT * FROM embeddings;")
+# collection.peek(5)
 
 # add many
 collection.add( 
@@ -38,17 +39,15 @@ collection.add(
 #     where={"style": "style1", "uri": "img2.png"},
 # ))
 
-print(collection.peek())
-
 # # supports multiple at once 
-# collection.query( 
-#     query_embeddings=[11.1, 12.1, 13.1],
-#     # OR // COULD BE an AND and return a tuple
-#     # query_texts="doc10",
-#     n_results=10, # k, or top k, or top k results... can we remove this? and just do it for users
-#     where={"style": "style1"}, # performance considerations, duckdb, clickhouse, support lt, gt, !=, etc 
-#     # TODO: fixed/test the case where we load in 50 items, we filter out 49, does it return
-# )
+print("query", collection.query( 
+    query_embeddings=[[1.1, 2.3, 3.2], [5.1, 4.3, 2.2]],
+    # OR // COULD BE an AND and return a tuple
+    # query_texts="doc10",
+    n_results=2,
+    # where={"style": "style2"}, 
+))
+
 
 # collection.upsert( # always succeeds
 #     embeddings=[[1.1, 2.3, 3.2], [4.5, 6.9, 4.4], [1.1, 2.3, 3.2], [4.5, 6.9, 4.4], [1.1, 2.3, 3.2], [4.5, 6.9, 4.4], [1.1, 2.3, 3.2], [4.5, 6.9, 4.4]],
@@ -82,6 +81,6 @@ print(collection.peek())
 # collection.create_index # wipes out the index you have (if you have one) and creates a fresh one
 # collection = client.update_collection(oldName="test", newName="test2") # this feels a little odd to me (Jeff) -> collection.update(name="test2")
 
-# client.delete_collection(name="test")
+client.delete_collection(name="test")
 
 # todo: add fails if collisions on id

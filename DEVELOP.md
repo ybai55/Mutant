@@ -35,7 +35,6 @@ Mutant can be run via 3 modes:
 
 ```python
 import mutantdb
-
 api = mutantdb.Client()
 print(api.heartbeat())
 ```

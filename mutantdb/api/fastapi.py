@@ -6,7 +6,6 @@ import requests
 import json
 from mutantdb.api.models.Collection import Collection
 
-
 class FastAPI(API):
 
     def __init__(self, settings):
@@ -51,7 +50,6 @@ class FastAPI(API):
         resp.raise_for_status()
         return resp.json()
 
-
     def count(self, collection_name=None):
         '''Returns the number of embeddings in the database'''
         resp = requests.get(self._api_url + '/collections/' + collection_name + "/count")
@@ -59,37 +57,27 @@ class FastAPI(API):
         return resp.json()
 
     def peek(self, collection_name, limit=10):
-        print("running peek")
         return self.fetch(collection_name, limit=limit)
 
     def fetch(self, collection_name, ids=None, where={}, sort=None, limit=None, offset=None, page=None, page_size=None):
         '''Fetches embeddings from the database'''
-
-        # Where clause does not need collection_name.
-        # where["collection_name"] = collection_name
-
         if page and page_size:
             offset = (page - 1) * page_size
             limit = page_size
 
-        print("fetching", collection_name, ids, where, sort, limit, offset)
-
         resp = requests.post(self._api_url + "/collections/" + collection_name + "/fetch", data=json.dumps({
-            "ids": ids,
+            "ids":ids,
             "where":where,
             "sort":sort,
             "limit":limit,
             "offset":offset
         }))
-        print(resp.json())
 
         resp.raise_for_status()
         return pd.DataFrame.from_dict(resp.json())
 
     def delete(self, collection_name, where={}):
         '''Deletes embeddings from the database'''
-
-        where = self.where_with_collection_name(where)
 
         resp = requests.post(self._api_url + "/collections/" + collection_name + "/delete", data=json.dumps({"where":where}))
 
@@ -109,11 +97,10 @@ class FastAPI(API):
         '''
 
         resp = requests.post(self._api_url + "/collections/" + collection_name + "/add", data = json.dumps({
-            "collection_name": collection_name,
-            "embedding": embeddings,
-            "metadata": metadatas,
+            "embeddings": embeddings,
+            "metadatas": metadatas,
             "documents": documents,
-            "ids":ids,
+            "ids": ids,
         }) )
 
         resp.raise_for_status
@@ -130,7 +117,6 @@ class FastAPI(API):
         '''
 
         resp = requests.post(self._api_url + "/collections/" + collection_name + "/update", data = json.dumps({
-            "collection_name": collection_name,
             "embedding": embedding,
             "metadata": metadata,
         }) )
@@ -138,11 +124,8 @@ class FastAPI(API):
         resp.raise_for_status
         return True
 
-    def search(self, collection_name, embedding, n_results=10, where={}):
+    def query(self, collection_name, embedding, n_results=10, where={}):
         '''Gets the nearest neighbors of a single embedding'''
-
-        # where = self.where_with_collection_name(where)
-        where["collection_name"] = collection_name
 
         resp = requests.post(self._api_url + "/collections/" + collection_name + "/search", data = json.dumps({
             "embedding": embedding,

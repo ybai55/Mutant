@@ -23,10 +23,7 @@ def clickhouse_to_duckdb_schema(table_schema):
             item[list(item.keys())[0]] = 'STRING'
         if 'FLOAT64' in item[list(item.keys())[0]]:
             item[list(item.keys())[0]] = 'DOUBLE'
-        if 'MAP(STRING, STRING)' in item[list(item.keys())[0]]:
-            item[list(item.keys())[0]] = 'JSON'
-        if 'NULLABLE(MAP(STRING, STRING))' in item[list(item.keys())[0]]:
-            item[list(item.keys())[0]] = 'JSON'
+        # NIT: here we need to turn metadata into JSON for duckdb
 
     return table_schema
 
@@ -36,6 +33,32 @@ def clickhouse_to_duckdb_schema(table_schema):
 # to a third superclass they both extend would be preferable.
 class DuckDB(Clickhouse):
 
+    # duckdb has a different way of connecting to the database
+    def __init__(self, settings):
+        self._conn = duckdb.connect()
+        self._create_table_collections()
+        self._create_table_embeddings()
+        self._idx = Hnswlib(settings)
+        self._settings = settings
+
+        # https://duckdb.org/docs/extensions/overview
+        self._conn.execute("INSTALL 'json';")
+        self._conn.execute("LOAD 'json';")
+
+    def _create_table_collections(self):
+        self._conn.execute(f'''CREATE TABLE collections (
+            {db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(COLLECTION_TABLE_SCHEMA))}
+        ) ''')
+
+    # duckdb has different types, so we want to convert the clickhouse schema to duckdb schema
+    def _create_table_embeddings(self):
+        self._conn.execute(f'''CREATE TABLE embeddings (
+            {db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(EMBEDDING_TABLE_SCHEMA))}
+        ) ''')
+
+    # 
+    #  COLLECTION METHODS
+    # 
     def create_collection(self, name, metadata=None):
         if metadata is None:
             metadata = {}
@@ -60,57 +83,37 @@ class DuckDB(Clickhouse):
     def delete_collection(self, name):
         return self._conn.execute(f'''DELETE FROM collections WHERE name = ?''', [name])
 
-    def _create_table_collections(self):
-        self._conn.execute(f'''CREATE TABLE collections (
-            {db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(COLLECTION_TABLE_SCHEMA))}
-        ) ''')
-
-    # duckdb has different types, so we want to convert the clickhouse schema to duckdb schema
-    def _create_table_embeddings(self):
-        self._conn.execute(f'''CREATE TABLE embeddings (
-            {db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(EMBEDDING_TABLE_SCHEMA))}
-        ) ''')
-
-    # duckdb has a different way of connecting to the database
-    def __init__(self, settings):
-        self._conn = duckdb.connect()
-        self._create_table_collections()
-        self._create_table_embeddings()
-        self._idx = Hnswlib(settings)
-        self._settings = settings
-
-        # https://duckdb.org/docs/extensions/overview
-        self._conn.execute("INSTALL 'json';")
-        self._conn.execute("LOAD 'json';")
-
+    # 
+    #  ITEM METHODS
+    # 
     # the execute many syntax is different than clickhouse, the (?,?) syntax is different than clickhouse
     def add(self, collection_uuid, embedding, metadata=None, documents=None, ids=None):
 
-        # look up collection uuid
-        # collection_uuid = self.get_collection(collection_uuid)['uuid'].values[0]
         metadata = [json.dumps(x) if not isinstance(x, str) else x for x in metadata]
 
         data_to_insert = []
         for i in range(len(embedding)):
-            data_to_insert.append([collection_uuid[i], str(uuid.uuid4()), embedding[i], metadata[i], documents[i], ids[i]])
+            data_to_insert.append([collection_uuid, str(uuid.uuid4()), embedding[i], metadata[i], documents[i], ids[i]])
 
         insert_string = "collection_uuid, uuid, embedding, metadata, document, id"
+
         self._conn.executemany(f'''
          INSERT INTO embeddings ({insert_string}) VALUES (?,?,?,?,?,?)''', data_to_insert)
 
-    def _count(self, collection_uuid=None):
-        where_string = ""
-        if collection_uuid is not None:
-            where_string = f"WHERE collection_uuid = '{collection_uuid}'"
+        return [uuid.UUID(x[1]) for x in data_to_insert]  # return uuids
+
+    def _count(self, collection_uuid):
+        where_string = f"WHERE collection_uuid = '{collection_uuid}'"
         return self._conn.query(f"SELECT COUNT() FROM embeddings {where_string}")
+
     def count(self, collection_name=None):
-        collection_uuid = self.get_collection(collection_name).iloc[0].uuid
+        collection_uuid = self.get_collection_uuid_from_name(collection_name)
         return self._count(collection_uuid=collection_uuid).fetchall()[0][0]
 
     def _filter_metadata(self, key, value):
-        return f" AND json_extract_string(metadata,'$.{key}') = '{value}'"
+        return f" json_extract_string(metadata,'$.{key}') = '{value}'"
 
-    def _fetch(self, where=""):
+    def _fetch(self, where):
         val = self._conn.execute(f'''SELECT {db_schema_to_keys()} FROM embeddings {where}''').df()
         # Convert UUID strings to UUID objects
         val['uuid'] = val['uuid'].apply(lambda x: uuid.UUID(x))
@@ -145,24 +148,6 @@ class DuckDB(Clickhouse):
 
     def raw_sql(self, sql):
         return self._conn.execute(sql).df()
-
-    def get_random(self, where={}, n=1):
-        # check to see if query is a dict and if it is a flat list of key value pairs
-        if where is not None:
-            if not isinstance(where, dict):
-                raise Exception("Invalid where: " + str(where))
-
-            # ensure where is a flat dict
-            for key in where:
-                if isinstance(where[key], dict):
-                    raise Exception("Invalid where: " + str(where))
-
-        where = " AND ".join([f"{key} = '{value}'" for key, value in where.items()])
-        if where:
-            where = f"WHERE {where}"
-
-        return self._conn.execute(f'''
-            SELECT {db_schema_to_keys()} FROM embeddings {where} LIMIT {n}''').df()  # ORDER BY rand()
 
     # TODO: This method should share logic with clickhouse impl
     def reset(self):

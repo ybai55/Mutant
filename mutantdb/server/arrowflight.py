@@ -7,4 +7,5 @@ class ArrowFlight(mutantdb.server.Server):
         super().__init__()
         pass
 
+
 # TODO: Implement

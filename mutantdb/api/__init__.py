@@ -6,8 +6,6 @@ import pandas as pd
 
 class API(ABC):
 
-    _collection_name = "default_space"
-
     @abstractmethod
     def __init__(self):
         pass
@@ -40,9 +38,9 @@ class API(ABC):
 
     @abstractmethod
     def create_collection(
-        self,
-        name: str,
-        metadata: Optional[Dict] = None,
+            self,
+            name: str,
+            metadata: Optional[Dict] = None,
     ) -> int:
         """Creates a new collection in the database
 
@@ -58,9 +56,9 @@ class API(ABC):
 
     @abstractmethod
     def get_collection(
-        self,
-        name: Optional[str] = None,
-        uuid: Optional[UUID] = None,
+            self,
+            name: Optional[str] = None,
+            uuid: Optional[UUID] = None,
     ) -> int:
         """Gets a collection from the database by either name or uuid
 
@@ -76,12 +74,12 @@ class API(ABC):
 
     @abstractmethod
     def add(
-        self,
-        embedding: Sequence[Sequence[float]],
-        collection_name: Union[str, Sequence[str]],
-        metadata: Optional[Union[Dict, Sequence[Dict]]] = None,
-        documents: Optional[Union[str, Sequence[str]]] = None,
-        ids: Optional[Union[str, Sequence[str]]] = None,
+            self,
+            embedding: Union[Sequence[Sequence[float]], Sequence[float]],
+            collection_name: Union[str, Sequence[str]],
+            metadata: Optional[Union[Dict, Sequence[Dict]]] = None,
+            documents: Optional[Union[str, Sequence[str]]] = None,
+            ids: Optional[Union[str, Sequence[str]]] = None,
     ) -> bool:
         """Add embeddings to the data store. This is the most general way to add embeddings to the database.
         ⚠️ It is recommended to use the more specific methods below when possible.
@@ -99,10 +97,10 @@ class API(ABC):
 
     @abstractmethod
     def update(
-        self,
-        embedding: Sequence[Sequence[float]],
-        collection_name: Union[str, Sequence[str]],
-        metadata: Optional[Union[Dict, Sequence[Dict]]] = None,
+            self,
+            embedding: Sequence[Sequence[float]],
+            collection_name: Union[str, Sequence[str]],
+            metadata: Optional[Union[Dict, Sequence[Dict]]] = None,
     ) -> bool:
         """Add embeddings to the data store. This is the most general way to add embeddings to the database.
         ⚠️ It is recommended to use the more specific methods below when possible.
@@ -130,13 +128,13 @@ class API(ABC):
 
     @abstractmethod
     def fetch(
-        self,
-        where: Optional[Dict[str, str]] = {},
-        sort: Optional[str] = None,
-        limit: Optional[int] = None,
-        offset: Optional[int] = None,
-        page: Optional[int] = None,
-        page_size: Optional[int] = None,
+            self,
+            where: Optional[Dict[str, str]] = {},
+            sort: Optional[str] = None,
+            limit: Optional[int] = None,
+            offset: Optional[int] = None,
+            page: Optional[int] = None,
+            page_size: Optional[int] = None,
     ) -> pd.DataFrame:
         """Fetches embeddings from the database. Supports filtering, sorting, and pagination.
         ⚠️ This method should not be used directly.
@@ -174,8 +172,12 @@ class API(ABC):
         distances: Sequence[float]
 
     @abstractmethod
-    def search(
-        self, embedding: Sequence[float], n_results: int = 10, where: Dict[str, str] = {}
+    def query(
+            self,
+            collection_name: str,
+            embeddings: Union[Sequence[Sequence[float]], Sequence[float]],
+            n_results: int = 10,
+            where: Dict[str, str] = {}
     ) -> NearestNeighborsResult:
         """Gets the nearest neighbors of a single embedding
         ⚠️ This method should not be used directly.
@@ -226,42 +228,3 @@ class API(ABC):
         """
         pass
 
-    def set_collection_name(self, collection_name: str) -> None:
-        """Sets the model space name for the client, allowing it to be omitted elsewhere
-
-        Args:
-            collection_name (str): The model space name
-
-        Returns:
-            None
-
-        """
-        self._collection_name = collection_name
-
-    def get_collection_name(self) -> str:
-        """Returns the model space name the client has
-
-        Args:
-            None
-
-        Returns:
-            str: The model space name
-
-        """
-        return self._collection_name
-
-    def where_with_collection_name(self, where_clause: Dict[str, str]) -> Dict[str, str]:
-        """Returns a where clause that specifies the default model space iff it wasn't already specified
-        ⚠️ This method should not be used directly.
-
-        Args:
-            where_clause (dict): The where clause to add the model space name to
-
-        Returns:
-            dict: The where clause with the model space name added
-        """
-
-        if self._collection_name and "collection_name" not in where_clause:
-            where_clause["collection_name"] = self._collection_name
-
-        return where_clause
