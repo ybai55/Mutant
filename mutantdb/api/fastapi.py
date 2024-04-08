@@ -65,10 +65,8 @@ class FastAPI(API):
     def fetch(self, collection_name, ids=None, where={}, sort=None, limit=None, offset=None, page=None, page_size=None):
         '''Fetches embeddings from the database'''
 
-        # where = self.where_with_collection_name(where)
-        if where is None:
-            where = {}
-        where["collection_name"] = collection_name
+        # Where clause does not need collection_name.
+        # where["collection_name"] = collection_name
 
         if page and page_size:
             offset = (page - 1) * page_size
