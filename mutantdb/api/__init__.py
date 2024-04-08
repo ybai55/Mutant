@@ -7,11 +7,12 @@ from mutantdb.api.types import (
     Documents,
     Embeddings,
     IDs,
-    Item,
+    GetResult,
     Metadatas,
-    NearestNeighborsResult,
+    QueryResult,
     Where,
 )
+import json
 
 
 class API(ABC):
@@ -141,7 +142,7 @@ class API(ABC):
         pass
 
     @abstractmethod
-    def _peek(self, collection_name: str, n: int = 10):
+    def _peek(self, collection_name: str, n: int = 10) -> GetResult:
         pass
 
     @abstractmethod
@@ -155,7 +156,7 @@ class API(ABC):
         offset: Optional[int] = None,
         page: Optional[int] = None,
         page_size: Optional[int] = None,
-    ) -> Sequence[Item]:
+    ) -> GetResult:
         """Gets embeddings from the database. Supports filtering, sorting, and pagination.
         ⚠️ This method should not be used directly.
 
@@ -190,7 +191,7 @@ class API(ABC):
         query_embeddings: Embeddings,
         n_results: int = 10,
         where: Where = {},
-    ) -> Sequence[NearestNeighborsResult]:
+    ) -> QueryResult:
         """Gets the nearest neighbors of a single embedding
         ⚠️ This method should not be used directly.
 

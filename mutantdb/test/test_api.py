@@ -14,18 +14,18 @@ from mutantdb.api.models import Collection
 @pytest.fixture
 def local_api():
     return mutantdb.Client(Settings(mutant_api_impl="local",
-                                   mutant_db_impl="duckdb",
-                                   persist_directory=tempfile.gettempdir()))
+                                    mutant_db_impl="duckdb",
+                                    persist_directory=tempfile.gettempdir()))
 
 @pytest.fixture
 def fastapi_integration_api():
-    return mutantdb.Client() # configured by environment variables
+    return mutantdb.Client()  # configured by environment variables
 
 
 def _build_fastapi_api():
     return mutantdb.Client(Settings(mutant_api_impl="rest",
-                                   mutant_server_host="localhost",
-                                   mutant_server_http_port="6666"))
+                                    mutant_server_host="localhost",
+                                    mutant_server_http_port="6666"))
 
 
 @pytest.fixture
@@ -36,7 +36,7 @@ def fastapi_api():
 def run_server():
     settings = Settings(mutant_api_impl="local",
                         mutant_db_impl="duckdb",
-                        persist_directory=tempfile.gettempdir()+"/test_server")
+                        persist_directory=tempfile.gettempdir() + "/test_server")
     server = mutantdb.server.fastapi.FastAPI(settings)
     uvicorn.run(server.app(), host="0.0.0.0", port=6666, log_level="info")
 
@@ -119,8 +119,8 @@ def test_get_from_db(api_fixture, request):
     collection = api.create_collection("testspace")
     collection.add(**batch_records)
     records = collection.get()
-
-    assert len(records) == 2
+    for key in records.keys():
+        assert len(records[key]) == 2
 
 
 @pytest.mark.parametrize('api_fixture', test_apis)
@@ -146,12 +146,10 @@ def test_get_nearest_neighbors(api_fixture, request):
     collection.add(**batch_records)
     # assert api.create_index(collection_name="testspace") # default is auto now
 
-    nn = collection.query(query_embeddings=[[1.1, 2.3, 3.2]],
-                                   n_results=1,
-                                   where={})
+    nn = collection.query(query_embeddings=[[1.1, 2.3, 3.2]], n_results=1, where={})
 
-    print("nn", nn)
-    assert len(nn[0]['items']) == 1
+    for key in nn.keys():
+        assert len(nn[key]) == 1
 
 
 @pytest.mark.parametrize('api_fixture', test_apis)
@@ -165,9 +163,7 @@ def test_get_nearest_neighbors_filter(api_fixture, request):
     # assert api.create_index(collection_name="testspace") # default is auto now
 
     with pytest.raises(Exception) as e:
-        nn = collection.query(query_embeddings=[[1.1, 2.3, 3.2]],
-                                       n_results=1,
-                                       where={"distance":"false"})
+        nn = collection.query(query_embeddings=[[1.1, 2.3, 3.2]], n_results=1, where={"distance":"false"})
 
     assert str(e.value).__contains__("found")
 
@@ -197,9 +193,7 @@ def test_delete_with_index(api_fixture, request):
     collection.add(**batch_records)
     assert collection.count() == 2
     # api.create_index()
-    nn = collection.query(query_embeddings=[[1.1, 2.3, 3.2]],
-                                   n_results=1)
-
+    nn = collection.query(query_embeddings=[[1.1, 2.3, 3.2]], n_results=1)
 
     # assert nn['embeddings']['inference_class'][0] == 'knife'
 
@@ -241,9 +235,9 @@ def test_increment_index_on(api_fixture, request):
 
     # increment index
     # collection.create_index(index_type="hnsw", index_params={"M": 16, "efConstruction": 200})
-    nn = collection.query(query_embeddings=[[1.1, 2.3, 3.2]],
-                                   n_results=1)
-    assert len(nn[0]['items']) == 1
+    nn = collection.query(query_embeddings=[[1.1, 2.3, 3.2]], n_results=1)
+    for key in nn.keys():
+        assert len(nn[key]) == 1
 
 @pytest.mark.parametrize('api_fixture', test_apis)
 def test_increment_index_off(api_fixture, request):
@@ -256,9 +250,9 @@ def test_increment_index_off(api_fixture, request):
 
     # incremental index
     collection.create_index()
-    nn = collection.query(query_embeddings=[[1.1, 2.3, 3.2]],
-                                   n_results=1)
-    assert len(nn[0]['items']) == 1
+    nn = collection.query(query_embeddings=[[1.1, 2.3, 3.2]], n_results=1)
+    for key in nn.keys():
+        assert len(nn[key]) == 1
 
 @pytest.mark.parametrize('api_fixture', test_apis)
 def skipping_indexing_will_fail(api_fixture, request):
@@ -325,4 +319,5 @@ def test_peek(api_fixture, request):
 
     # peek
     peek = collection.peek()
-    assert len(peek) == 2
+    for key in peek.keys():
+        assert len(peek[key]) == 2

@@ -1,20 +1,30 @@
 from typing import Union, Sequence, Dict, TypedDict
+import json
 
 ID = str
-IDs = Sequence[ID]
+IDs = list[ID]
 
 Embedding = Sequence[float]
+# TODO: Use generic one or many type
 Embeddings = Union[Sequence[Embedding], Embedding]
 
 Metadata = Dict[str, str]
 Metadatas = Union[Metadata, Sequence[Metadata]]
 
 Where = Dict[str, str]
-Documents = Union[str, Sequence[str]]
+Document = str
+Documents = Union[Document, Sequence[Document]]
 
-Item = Dict
+class GetResult(TypedDict):
+    ids: IDs
+    embeddings: list[Embedding]
+    documents: list[Document]
+    metadatas: list[Metadata]
 
 
-class NearestNeighborsResult(TypedDict):
-    items: list[Item]
-    distances: Sequence[float]
+class QueryResult(TypedDict):
+    ids: list[IDs]
+    embeddings: list[list[Embedding]]
+    documents: list[list[Document]]
+    metadatas: list[list[Metadata]]
+    distances: list[list[float]]

@@ -131,6 +131,8 @@ class Hnswlib(Index):
         logger.debug("Index saved to {self._save_folder}/index.bin")
 
     def _load(self, collection_uuid):
+        # if we are calling load, we clearly need a different index than the one we have
+        self._index = None
 
         # unpickle the mappers
         try:
@@ -200,11 +202,11 @@ class Hnswlib(Index):
     def delete_index(self, uuid):
         uuid = str(uuid)
         if self._collection_uuid == uuid:
-            _index = None
-            _collection_uuid = None
-            _index_metadata = None
-            _id_to_uuid = {}
-            _uuid_to_id = {}
+            self._index = None
+            self._collection_uuid = None
+            self._index_metadata = None
+            self._id_to_uuid = {}
+            self._uuid_to_id = {}
 
         if os.path.exists(f"{self._save_folder}"):
             for f in os.listdir(f"{self._save_folder}"):

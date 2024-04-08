@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import Sequence, Any
-from mutantdb.api.types import Item
 
 
 class DB(ABC):

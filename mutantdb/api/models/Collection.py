@@ -1,14 +1,15 @@
 from typing import TYPE_CHECKING, Optional, Union, Sequence
 from pydantic import BaseModel, PrivateAttr
+import json
 
 from mutantdb.api.types import (
-    NearestNeighborsResult,
+    QueryResult,
     Where,
     Embeddings,
     IDs,
     Metadatas,
     Documents,
-    Item,
+    GetResult,
 )
 
 if TYPE_CHECKING:
@@ -46,15 +47,15 @@ class Collection(BaseModel):
         sort: Optional[str] = None,
         limit: Optional[int] = None,
         offset: Optional[int] = None,
-    ) -> Sequence[Item]:
+    ) -> GetResult:
         return self._client._get(self.name, ids, where, sort, limit, offset)
 
-    def peek(self, limit: int = 10) -> Sequence[Item]:
+    def peek(self, limit: int = 10) -> GetResult:
         return self._client._peek(self.name, limit)
 
     def query(
         self, query_embeddings: Embeddings, n_results: int = 10, where: Where = {}
-    ) -> Sequence[NearestNeighborsResult]:
+    ) -> QueryResult:
         return self._client._query(
             collection_name=self.name,
             query_embeddings=query_embeddings,
