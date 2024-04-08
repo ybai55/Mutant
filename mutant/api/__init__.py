@@ -30,7 +30,8 @@ class API(ABC):
         input_uri: Optional[Sequence[str]] = None,
         dataset: Optional[Union[str, Sequence[str]]] = None,
         inference_class: Optional[Sequence[str]] = None,
-        label_class: Optional[Sequence[str]] = None
+        label_class: Optional[Sequence[str]] = None,
+        metadata: Optional[Union[Dict, Sequence[Dict]]] = None,
     ) -> bool:
         """Add embeddings to the data store. This is the most general way to add embeddings to the database.
            ⚠️ It is recommended to use the more specific methods below when possible.

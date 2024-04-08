@@ -54,6 +54,10 @@ class DuckDB(Clickhouse):
         self._idx = Hnswlib(settings)
         self._settings = settings
 
+        # https://duckdb.org/docs/extensions/overview
+        self._conn.execute("INSTALL 'json';")
+        self._conn.execute("LOAD 'json';")
+
     # the execute many syntax is different than clickhouse, the (?,?) syntax is different than clickhouse
     def add(
         self,
@@ -61,6 +65,7 @@ class DuckDB(Clickhouse):
         embedding,
         input_uri,
         dataset=None,
+        metadata=None,
         # inference_class=None,
         # label_class=None,
     ):
@@ -79,11 +84,11 @@ class DuckDB(Clickhouse):
             )
 
         insert_string = (
-            "model_space, uuid, embedding, input_uri, dataset" #, inference_class, label_class"
+            "model_space, uuid, embedding, input_uri, dataset, metadata" #, inference_class, label_class"
         )
         self._conn.executemany(
             f"""
-         INSERT INTO embeddings ({insert_string}) VALUES (?,?,?,?,?)""",
+         INSERT INTO embeddings ({insert_string}) VALUES (?,?,?,?,?,?)""",
             data_to_insert,
         )
 
@@ -225,12 +230,12 @@ class PersistentDuckDB(DuckDB):
                     (FORMAT PARQUET);
             """
         )
-        self._conn.execute(f'''
-            COPY
-                (SELECT * FROM results)
-            TO  '{self._save_folder}/mutant_results.parquet'
-                (FORMAT PARQUET);
-        ''')
+        # self._conn.execute(f'''
+        #     COPY
+        #         (SELECT * FROM results)
+        #     TO  '{self._save_folder}/mutant_results.parquet'
+        #         (FORMAT PARQUET);
+        # ''')
 
     def load(self):
         """
@@ -246,11 +251,11 @@ class PersistentDuckDB(DuckDB):
             self._conn.execute(f"INSERT INTO embeddings SELECT * FROM read_parquet('{path}');")
 
         # load in the results
-        if not os.path.exists(f"{self._save_folder}/mutant_results.parquet"):
-            print(f"No existing results found in {self._save_folder}, skipping load")
-        else:
-            path = self._save_folder + "/mutant_results.parquet"
-            self._conn.execute(f"INSERT INTO results SELECT * FROM read_parquet('{path}');")
+        # if not os.path.exists(f"{self._save_folder}/mutant_results.parquet"):
+        #     print(f"No existing results found in {self._save_folder}, skipping load")
+        # else:
+        #     path = self._save_folder + "/mutant_results.parquet"
+        #     self._conn.execute(f"INSERT INTO results SELECT * FROM read_parquet('{path}');")
 
     def __del__(self):
         print("PersistantDuckDB del, about to run persist")

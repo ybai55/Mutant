@@ -52,7 +52,9 @@ class FastAPI(API):
             model_space,
             embedding,
             input_uri=None,
-            dataset=None,):
+            dataset=None,
+            metadata=None,
+            ):
             # inference_class=None,
             # label_class=None):
         """
@@ -70,6 +72,7 @@ class FastAPI(API):
                     "embedding": embedding,
                     "input_uri": input_uri,
                     "dataset": dataset,
+                    "metadata": metadata,
                     # "inference_class": inference_class,
                     # "label_class": label_class,
                 }

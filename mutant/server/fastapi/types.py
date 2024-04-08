@@ -8,6 +8,7 @@ class AddEmbedding(BaseModel):
     embedding: list
     input_uri: Union[str, list]
     dataset: Union[str, list] = None
+    metadata: Union[str, list] = None
     # inference_class: Union[str, list] = None
     # label_class: Union[str, list] = None
 

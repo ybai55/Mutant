@@ -13,7 +13,9 @@ class DB(ABC):
             embedding,
             input_uri,
             dataset=None,
-            custom_quality_score=None,):
+            custom_quality_score=None,
+            metadata=None,
+            ):
             # inference_class=None,
             # label_class=None):
         pass

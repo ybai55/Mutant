@@ -16,6 +16,7 @@ EMBEDDING_TABLE_SCHEMA = [
     {'embedding': 'Array(Float64)'},
     {'input_uri': 'String'},
     {'dataset': 'String'},
+    {'metadata': 'JSON'},
     # {'inference_class': 'String'},
     # {'label_class': 'Nullable(String)'},
 ]
@@ -60,6 +61,9 @@ class Clickhouse(DB):
             {db_array_schema_to_clickhouse_schema(EMBEDDING_TABLE_SCHEMA)}
         ) ENGINE = MergeTree() ORDER BY model_space"""
         )
+
+        self._conn.execute(
+            f'''SET allow_experimental_object_type = true''')   # https://clickhouse.com/docs/en/sql-reference/data-types/json/
         self._conn.execute(f"""SET allow_experimental_lightweight_delete = true""")
         # https://clickhouse.com/docs/en/operations/settings/settings/#mutations_sync
         self._conn.execute(f"""SET mutations_sync = 1""")
@@ -84,6 +88,7 @@ class Clickhouse(DB):
         embedding,
         input_uri,
         dataset=None,
+        metadata=None,
         # inference_class=None,
         # label_class=None,
     ):
@@ -102,7 +107,7 @@ class Clickhouse(DB):
             )
 
         insert_string = (
-            "model_space, uuid, embedding, input_uri, dataset" #, inference_class, label_class"
+            "model_space, uuid, embedding, input_uri, dataset, metadata" #, inference_class, label_class"
         )
         self._conn.execute(f"""INSERT INTO embeddings ({insert_string}) VALUES """, data_to_insert)
 
