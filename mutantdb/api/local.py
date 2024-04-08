@@ -3,6 +3,7 @@ from typing import Dict, Optional
 from mutantdb.api import API
 from mutantdb.utils.sampling import score_and_store, get_sample
 from mutantdb.server.utils.telemetry.capture import Capture
+from mutantdb.api.models.Collection import Collection
 
 import re
 
@@ -27,6 +28,10 @@ class LocalAPI(API):
 
     def heartbeat(self):
         return int(1000 * time.time_ns())
+
+    def Collection(self, name):
+        # create a new Collection object method as a factory
+        return Collection(self, name)
 
     def create_collection(
             self,
@@ -63,26 +68,27 @@ class LocalAPI(API):
     def add(
             self,
             collection_name,
-            embedding,
-            metadata=None
+            embeddings,
+            metadatas=None
     ):
 
         collection_name = collection_name or self.get_collection_name()
-        number_of_embeddings = len(embedding)
+        number_of_embeddings = len(embeddings)
 
-        if metadata is None:
-            metadata = [{} for _ in range(number_of_embeddings)]
+        if metadatas is None:
+            metadatas = [{} for _ in range(number_of_embeddings)]
 
         # convert all metadata values to strings : TODO: handle this better
         # this is currently here because clickhouse-driver does not support json
-        for m in metadata:
+        for m in metadatas:
             for k, v in m.items():
                 m[k] = str(v)
 
         collection_uuid = self.get_collection(collection_name).iloc[0].uuid
 
-        added_uuids = self._db.add(collection_uuid, embedding, metadata)
-        self._db.add_incremental(collection_uuid, added_uuids, embedding)
+        added_uuids = self._db.add(collection_uuid, embeddings, metadatas)
+        print("Added UUIDs: ", added_uuids)
+        # self._db.add_incremental(collection_uuid, added_uuids, embeddings)
 
         return True
 

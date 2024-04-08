@@ -22,7 +22,7 @@ mutant_api.add(
     input_uri=["/images/1", "/images/2", "/images/3"],
     dataset="train",
     inference_class=["spoon", "knife", "fork"],
-    collection_name="sample_space"
+    collection_uuid="sample_space"
 )
 
 print("count")

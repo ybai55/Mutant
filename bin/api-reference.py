@@ -30,7 +30,7 @@ mutant_api.add(
     input_uri=["/images/3.png", "/images/5.png"],
     inference_class=["bicycle", "car"],
     dataset=["training","training"],
-    collection_name="sample_space"
+    collection_uuid="sample_space"
 )
 
 # add_training, add_production, and add_triage simply set the dataset name for you

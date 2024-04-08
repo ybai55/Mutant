@@ -25,16 +25,16 @@ print("create", mutant.create_collection("test", {"test", "test"}))
 print("count", mutant.count("test"))
 
 print("add", mutant.add(
-    collection_name="test",
+    collection_uuid="test",
     embedding=[[1.1, 2.3, 3.2], [4.5, 6.9, 4.4], [1.1, 2.3, 3.2], [4.5, 6.9, 4.4], [1.1, 2.3, 3.2], [4.5, 6.9, 4.4], [1.1, 2.3, 3.2], [4.5, 6.9, 4.4]], 
 ))
 print("add", mutant.add(
-    collection_name="test",
+    collection_uuid="test",
     embedding=[[5.1, 4.3, 3.2], [6.5, 5.9, 4.4]], 
     metadata=[{"uri": "img11.png", "style": "style1"}, {"uri": "img10.png", "style": "style1"}]
 ))
 print("add", mutant.add(
-    collection_name="test",
+    collection_uuid="test",
     embedding=[[11.0, 12.0, 13.0]], 
     metadata=[{"uri": "img12.png", "style": "style1"}]
 ))

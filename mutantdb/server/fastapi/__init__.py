@@ -61,7 +61,7 @@ class FastAPI(mutantdb.server.Server):
         return self._api.delete_collection(name)
 
     def add(self, name: str, add: AddEmbedding):
-        return self._api.add(collection_name=name,
+        return self._api.add(collection_uuid=name,
                              embedding=add.embedding,
                              metadata=add.metadata
                              )
