@@ -1,9 +1,9 @@
 @ -0,0 +1,95 @@
-# Chroma MVP Application Architecture
+# Mutant MVP Application Architecture
 
 ## Context
 
-Chroma is a prototype application for analyzing the embeddings of a ML model.
+Mutant is a prototype application for analyzing the embeddings of a ML model.
 
 As an early stage product, it is essential to build an effective MVP
 to put in front of users and start iterating.
@@ -14,7 +14,7 @@ costly rewrites and API churn as much as practical.
 
 ### Functional Requirements
 
-- A python package for extracting embeddings and sending them to the Chroma API.
+- A python package for extracting embeddings and sending them to the Mutant API.
 - An application running in the background which receives embeddings and stores them.
 - Embeddings should be properly catalouged with good metadata about:
   - associated data set and model
@@ -47,23 +47,23 @@ costly rewrites and API churn as much as practical.
 
 ## Decision
 
-We will implement and distribute the Chroma Client as a Python library.
+We will implement and distribute the Mutant Client as a Python library.
 
-We will implement and distribute the Chroma Server as a collection of Docker images.
+We will implement and distribute the Mutant Server as a collection of Docker images.
 
-The entry point for installing/running Chroma Server will be to run Docker Compose.
+The entry point for installing/running Mutant Server will be to run Docker Compose.
 
-The Chroma Client is Chroma's only stable, public API. As the
-customer-facing part of the product, The Chroma Client is optimized
-for user experience, structured to showcase the value of Chroma, and
+The Mutant Client is Mutant's only stable, public API. As the
+customer-facing part of the product, The Mutant Client is optimized
+for user experience, structured to showcase the value of Mutant, and
 returns data in the format most immediately useful to consumers:
 Python objects and Numpy data frames.
 
-The communication channel between the Chroma Server and Chroma Client
+The communication channel between the Mutant Server and Mutant Client
 is a "private API" that should not be used directly from
 elsewhere. Since it needs to send large amounts of data back and forth
-to the Chroma Client, it is the primary performance bottleneck. Chroma
-reserves the right to alter the protocol between versions of Chroma or
+to the Mutant Client, it is the primary performance bottleneck. Mutant
+reserves the right to alter the protocol between versions of Mutant or
 implement nonstandard, hybrid or bespoke formats for performance
 reasons. The priority for the design of the backend protocol
 is throughput and latency, not ease of consumption.
@@ -79,8 +79,8 @@ zero-copy memory sharing instead of seralizing data over a network.
 ## Consequences
 
 - We can start by implementing this architecture in a very simple way
-  using the existing Chroma PoC: SQLite, FastAPI, etc.
-- There will be a strong abstraction layer between the Chroma Client
+  using the existing Mutant PoC: SQLite, FastAPI, etc.
+- There will be a strong abstraction layer between the Mutant Client
   and the backend. This will allow continued and constant evolution of
   the backend without disruption to public APIs.
 - Install will be simplified and reliable in that the user will not
@@ -88,6 +88,6 @@ zero-copy memory sharing instead of seralizing data over a network.
   itself.
 - Using Docker from the start will smooth the eventual transition to
   clustered and distributed architectures (e.g, Kubernetes, ECS)
-- In order to support languages other than Python, Chroma will need to
+- In order to support languages other than Python, Mutant will need to
   provide libraries in those languages capable of connecting to the
   backend protocol.

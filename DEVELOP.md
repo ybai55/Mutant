@@ -34,8 +34,9 @@ Mutant can be run via 3 modes:
 1. Standalone and in-memory:
 
 ```python
-import mutant
-api = mutant.init()
+import mutantdb
+
+api = mutantdb.init()
 print(api.heartbeat())
 ```
 pip install -r requirements_dev.txt
@@ -43,23 +44,27 @@ pip install -r requirements_dev.txt
 
 2. Standalone and in-memory with persistance:
 
-This by default saves your db and your indexes to a `.mutant` directory and can also load from them. 
+This by default saves your db and your indexes to a `.mutant` directory and can also load from them.
+
 ```python
-import mutant
-from mutant.config import Settings
-api = mutant.init(Settings(mutant_db_impl="duckdb+parquet"))
+import mutantdb
+from mutantdb.config import Settings
+
+api = mutantdb.init(Settings(mutant_db_impl="duckdb+parquet"))
 print(api.heartbeat())
 ```
 
 3. With a persistent backend and a small frontend client
 
 Run `docker-compose up -d --build`
+
 ```python
-import mutant
-from mutant.config import Settings
-api = mutant.init(Settings(mutant_api_impl="rest",
-                              mutant_server_host="localhost",
-                              mutant_server_http_port="8000") )
+import mutantdb
+from mutantdb.config import Settings
+
+api = mutantdb.init(Settings(mutant_api_impl="rest",
+                             mutant_server_host="localhost",
+                             mutant_server_http_port="8000"))
 
 print(api.heartbeat())
 ```

@@ -10,9 +10,9 @@ services:
       context: .
       dockerfile: Dockerfile
     volumes:
-      - ./mutant/:/mutant/
+      - ./mutantdb/:/mutantdb/
       - index_data:/index_data
-    command: uvicorn mutant.app:app --reload --workers 1 --host 0.0.0.0 --port 8000
+    command: uvicorn mutantdb.app:app --reload --workers 1 --host 0.0.0.0 --port 8000
     environment:
       - MUTANT_DB_IMPL=clickhouse
       - CLICKHOUSE_HOST=clickhouse

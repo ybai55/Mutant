@@ -97,10 +97,10 @@ Implementations:
 决定 Decision
 
 
-我们将把 chroma-server 和 chroma-client 项目合并成一个single codebase。
+我们将把 mutant-server 和 mutant-client 项目合并成一个single codebase。
 Codebase 既可以作为 library 使用，也可以调用 server 的 entry-point 运行 server，供其他客户端连接。
 面向客户的 Python API 在 client+server 模式和仅 client-only 模式下完全相同。
-我们将拆分项目的依赖项，需要的 PIP 依赖项将使用单独的 chroma[server] 或 chroma[all]。
+我们将拆分项目的依赖项，需要的 PIP 依赖项将使用单独的 mutant[server] 或 mutant[all]。
 Python API 重构 (Refactoring)
 
 我们将使用 Python 的 abc 模块 (遵循 PEP 3119 标准) 创建抽象接口(abstract interface)，来representing Mutant 内部结构的关键部分。

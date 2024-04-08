@@ -1,18 +1,18 @@
 # Sanity check script to ensure that the Mutant client can connect
 # and is capable of recieving data.
 
-import mutant
-from mutant.config import Settings
+import mutantdb
+from mutantdb.config import Settings
 
 # run in in-memory mode
-mutant_api = mutant.init()
+mutant_api = mutantdb.init()
 
 # uncomment to run in client-server mode
-# chroma_api = chroma.init(Settings(chroma_api_impl="rest",
-#                               chroma_server_host="localhost",
-#                               chroma_server_http_port="8000") )
+# mutant_api = mutant.init(Settings(mutant_api_impl="rest",
+#                               mutant_server_host="localhost",
+#                               mutant_server_http_port="8000") )
 
-mutant_api.set_model_space("sample_space")
+mutant_api.set_collection_name("sample_space")
 print("Getting heartbeat to verify the server is up")
 print(mutant_api.heartbeat())
 
@@ -22,7 +22,7 @@ mutant_api.add(
     input_uri=["/images/1", "/images/2", "/images/3"],
     dataset="train",
     inference_class=["spoon", "knife", "fork"],
-    model_space="sample_space"
+    collection_name="sample_space"
 )
 
 print("count")

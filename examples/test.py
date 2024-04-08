@@ -8,7 +8,7 @@ from torchvision import datasets, transforms
 import pandas as pd
 import tqdm
 
-from mutant import mutant
+from mutantdb import mutantdb
 
 # We modify the MNIST Dataset class to expose some information about the source data
 # to allow us to uniquely identify an input.
@@ -83,9 +83,9 @@ class EmbeddingHook:
 embedding_hook = EmbeddingHook(model.fc2)
 
 
-mutant_client = mutant.init()
+mutant_client = mutantdb.init()
 
-# Send training data to Chroma
+# Send training data to Mutant
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=64)
 
 with torch.no_grad():
@@ -98,7 +98,7 @@ with torch.no_grad():
             label_class=label.detach().tolist(),
         )
 
-# Send unlabeled data to Chroma
+# Send unlabeled data to Mutant
 unlabeled_dataloader = torch.utils.data.DataLoader(unlabeled_dataset, batch_size=64)
 
 with torch.no_grad():
@@ -116,8 +116,8 @@ results = mutant_client.get_results()
 
 ### Inspect the results
 
-# These are inputs in the unlabeled dataset which Chroma has recommended for labeling to optimally improve model performance.
-# Display some of the images chroma suggests to label
+# These are inputs in the unlabeled dataset which Mutant has recommended for labeling to optimally improve model performance.
+# Display some of the images mutant suggests to label
 raw_data = datasets.mnist.read_image_file("../data/CustomDataset/raw/train-images-idx3-ubyte")
 
 import matplotlib.pyplot as plt

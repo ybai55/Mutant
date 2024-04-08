@@ -33,7 +33,7 @@ cd mutant
 cd mutant-server
 docker-compose up -d --build
 
-# install mutant-client
+# install mutantdb-client
 cd ../mutant-client
 pip3 install --upgrade pip # you have to do this or it will use UNKNOWN as the package name
 pip3 install .

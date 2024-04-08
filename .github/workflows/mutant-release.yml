@@ -62,7 +62,7 @@ jobs:
           Build Date: `${{steps.builddate.outputs.builddate}}`
           PIP Package: `mutant-${{steps.version.outputs.version}}.tar.gz`
           Docker Image: `${{steps.tag.outputs.tag_name}}`
-        artifacts: "dist/mutant-${{steps.version.outputs.version}}.tar.gz"
+        artifacts: "dist/mutantdb-${{steps.version.outputs.version}}.tar.gz"
         prerelease: true
     - name: Update Tag
       uses: richardsimko/update-tag@v1.0.5
@@ -83,6 +83,6 @@ jobs:
           Build Date: `${{steps.builddate.outputs.builddate}}`
           PIP Package: `mutant-${{steps.version.outputs.version}}.tar.gz`
           Docker Image: `${{steps.tag.outputs.tag_name}}`
-        artifacts: "dist/mutant-${{steps.version.outputs.version}}.tar.gz"
+        artifacts: "dist/mutantdb-${{steps.version.outputs.version}}.tar.gz"
         allowUpdates: true
         prerelease: true
