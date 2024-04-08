@@ -33,11 +33,11 @@ class LocalAPI(API):
 
     #
     # COLLECTION METHODS
-    # 
+    #
     def create_collection(
-            self,
-            name: str,
-            metadata: Optional[Dict] = None,
+        self,
+        name: str,
+        metadata: Optional[Dict] = None,
     ) -> int:
         if not is_valid_index_name(name):
             raise ValueError("Invalid index name: %s" % name)  # NIT: tell the user why
@@ -46,47 +46,41 @@ class LocalAPI(API):
         return Collection(self, name)
 
     def get_collection(
-            self,
-            name: str,
+        self,
+        name: str,
     ) -> int:
         self._db.get_collection(name)
         return Collection(self, name)
 
-    def _get_collection_db(
-            self,
-            name: str
-    ) -> int:
+    def _get_collection_db(self, name: str) -> int:
         return self._db.get_collection(name)
 
-    def list_collections(self) -> int:
+    def list_collections(self) -> list:
         return self._db.list_collections()
 
     # TODO: this need to actually do what the API says
     def update_collection(
-            self,
-            name: str,
-            metadata: Optional[Dict] = None,
+        self,
+        name: str,
+        metadata: Optional[Dict] = None,
     ) -> int:
         # NIT: make sure we have a valid name like we do in create
         return self._db.update_collection(name, metadata)
 
-    def delete_collection(
-            self,
-            name: str
-    ) -> int:
+    def delete_collection(self, name: str) -> int:
         return self._db.delete_collection(name)
 
     #
     # ITEM METHODS
-    # 
+    #
     def add(
-            self,
-            collection_name: str,
-            embeddings,
-            metadatas=None,
-            documents=None,
-            ids=None,
-            increment_index=True
+        self,
+        collection_name: str,
+        embeddings,
+        metadatas=None,
+        documents=None,
+        ids=None,
+        increment_index=True,
     ):
 
         number_of_embeddings = len(embeddings)
@@ -128,20 +122,16 @@ class LocalAPI(API):
             ids = [ids]
 
         collection_uuid = self._db.get_collection_uuid_from_name(collection_name)
-        added_uuids = self._db.add(collection_uuid, embedding=embeddings, metadata=metadatas, documents=documents,
-                                   ids=ids)
+        added_uuids = self._db.add(
+            collection_uuid, embedding=embeddings, metadata=metadatas, documents=documents, ids=ids
+        )
 
         if increment_index:
             self._db.add_incremental(collection_uuid, added_uuids, embeddings)
 
         return True  # NIT: should this return the ids of the succesfully added items?
 
-    def update(
-            self,
-            collection_name: str,
-            embedding,
-            metadata=None
-    ):
+    def update(self, collection_name: str, embedding, metadata=None):
 
         number_of_embeddings = len(embedding)
 
@@ -157,7 +147,7 @@ class LocalAPI(API):
         collection_uuid = self._db.get_collection_uuid_from_name(collection_name)
 
         # find the uuids of the embeddings where the metadata matches
-        # then update the embeddings for that 
+        # then update the embeddings for that
         # then update the index position for that embedding
         for item in metadata:
             uuid = self._db.get_uuid(collection_uuid, item)
@@ -169,8 +159,17 @@ class LocalAPI(API):
 
         return True
 
-    def fetch(self, collection_name, ids=None, where=None, sort=None, limit=None, offset=None, page=None,
-              page_size=None):
+    def get(
+        self,
+        collection_name,
+        ids=None,
+        where=None,
+        sort=None,
+        limit=None,
+        offset=None,
+        page=None,
+        page_size=None,
+    ):
 
         if where is None:
             where = {}
@@ -179,8 +178,14 @@ class LocalAPI(API):
             offset = (page - 1) * page_size
             limit = page_size
 
-        return self._db.fetch(collection_name=collection_name, ids=ids, where=where, sort=sort, limit=limit,
-                              offset=offset)
+        return self._db.get(
+            collection_name=collection_name,
+            ids=ids,
+            where=where,
+            sort=sort,
+            limit=limit,
+            offset=offset,
+        )
 
     def delete(self, collection_name, where={}):
 
@@ -196,13 +201,10 @@ class LocalAPI(API):
         self._db.reset()
         return True
 
-    def query(self, collection_name, embeddings, n_results=10, where={}):
+    def query(self, collection_name, query_embeddings, n_results=10, where={}):
 
         return self._db.get_nearest_neighbors(
-            collection_name=collection_name,
-            where=where,
-            embeddings=embeddings,
-            n_results=n_results
+            collection_name=collection_name, where=where, embeddings=query_embeddings, n_results=n_results
         )
 
     def raw_sql(self, raw_sql):
@@ -212,11 +214,9 @@ class LocalAPI(API):
     def create_index(self, collection_name):
 
         collection_uuid = self._db.get_collection_uuid_from_name(collection_name)
-        self._db.create_index(
-            collection_uuid=collection_uuid
-        )
+        self._db.create_index(collection_uuid=collection_uuid)
         return True
 
     def peek(self, collection_name, n=10):
 
-        return self.fetch(collection_name=collection_name, limit=n)
+        return self.get(collection_name=collection_name, limit=n)

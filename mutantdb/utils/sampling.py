@@ -20,10 +20,10 @@ def score_and_store(
     model_space: Optional[str] = "default_scope",
 ) -> None:
 
-    training_data = db_connection.fetch(
+    training_data = db_connection.get(
         where={"model_space": model_space, "dataset": training_dataset_name}
     )
-    unlabeled_data = db_connection.fetch(
+    unlabeled_data = db_connection.get(
         where={"model_space": model_space, "dataset": unlabeled_dataset_name}
     )
 

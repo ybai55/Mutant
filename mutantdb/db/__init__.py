@@ -28,18 +28,19 @@ class DB(ABC):
         pass
 
     @abstractmethod
-    def add(self,
-            collection_name: str,
-            embedding,
-            input_uri,
-            dataset=None,
-            custom_quality_score=None,
-            metadata=None
-            ):
+    def add(
+        self,
+        collection_name: str,
+        embedding,
+        input_uri,
+        dataset=None,
+        custom_quality_score=None,
+        metadata=None,
+    ):
         pass
 
     @abstractmethod
-    def fetch(self, where, sort, limit, offset):
+    def get(self, where, sort, limit, offset):
         pass
 
     @abstractmethod

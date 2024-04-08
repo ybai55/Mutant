@@ -41,9 +41,9 @@ def activation_uncertainty(training_data: pd.DataFrame, unlabeled_data: pd.DataF
 
         unlabeled_percentiles = training_percentiles[unlabeled_positions]
 
-        activation_uncertainty[
-            unlabeled_data["inference_class"] == class_name
-        ] = unlabeled_percentiles
+        activation_uncertainty[unlabeled_data["inference_class"] == class_name] = (
+            unlabeled_percentiles
+        )
 
     return activation_uncertainty
 
@@ -132,18 +132,18 @@ def class_outliers(
         dist_diff = np.median(t_neighbor_dists, axis=1) - np.median(v_neighbor_dists, axis=1)
         dist_diff_percentiles = np.argsort(dist_diff) / len(dist_diff)
 
-        representative_outliers[
-            unlabeled_data["inference_class"] == class_name
-        ] = dist_diff_percentiles
+        representative_outliers[unlabeled_data["inference_class"] == class_name] = (
+            dist_diff_percentiles
+        )
 
         overall_median = np.median(
             np.concatenate((t_neighbor_dists, v_neighbor_dists), axis=1), axis=1
         )
         overall_median_percentiles = np.argsort(overall_median) / len(overall_median)
 
-        difficult_outliers[
-            unlabeled_data["inference_class"] == class_name
-        ] = overall_median_percentiles
+        difficult_outliers[unlabeled_data["inference_class"] == class_name] = (
+            overall_median_percentiles
+        )
 
     return representative_outliers, difficult_outliers
 

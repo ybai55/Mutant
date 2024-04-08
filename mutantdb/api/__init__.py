@@ -38,9 +38,9 @@ class API(ABC):
 
     @abstractmethod
     def create_collection(
-            self,
-            name: str,
-            metadata: Optional[Dict] = None,
+        self,
+        name: str,
+        metadata: Optional[Dict] = None,
     ) -> int:
         """Creates a new collection in the database
 
@@ -56,15 +56,15 @@ class API(ABC):
 
     @abstractmethod
     def get_collection(
-            self,
-            name: Optional[str] = None,
-            uuid: Optional[UUID] = None,
+        self,
+        name: Optional[str] = None,
+        uuid: Optional[UUID] = None,
     ) -> int:
         """Gets a collection from the database by either name or uuid
 
         Args:
-            name (Optional[str]): The name of the collection to fetch. Defaults to None.
-            the uuid (Optional[UUID]): The uuid of the collection to fetch. Defaults to None.
+            name (Optional[str]): The name of the collection to get. Defaults to None.
+            the uuid (Optional[UUID]): The uuid of the collection to get. Defaults to None.
 
         Returns:
             dict: the requested collection
@@ -74,12 +74,12 @@ class API(ABC):
 
     @abstractmethod
     def add(
-            self,
-            embedding: Union[Sequence[Sequence[float]], Sequence[float]],
-            collection_name: Union[str, Sequence[str]],
-            metadata: Optional[Union[Dict, Sequence[Dict]]] = None,
-            documents: Optional[Union[str, Sequence[str]]] = None,
-            ids: Optional[Union[str, Sequence[str]]] = None,
+        self,
+        embedding: Union[Sequence[Sequence[float]], Sequence[float]],
+        collection_name: Union[str, Sequence[str]],
+        metadata: Optional[Union[Dict, Sequence[Dict]]] = None,
+        documents: Optional[Union[str, Sequence[str]]] = None,
+        ids: Optional[Union[str, Sequence[str]]] = None,
     ) -> bool:
         """Add embeddings to the data store. This is the most general way to add embeddings to the database.
         ⚠️ It is recommended to use the more specific methods below when possible.
@@ -97,10 +97,10 @@ class API(ABC):
 
     @abstractmethod
     def update(
-            self,
-            embedding: Sequence[Sequence[float]],
-            collection_name: Union[str, Sequence[str]],
-            metadata: Optional[Union[Dict, Sequence[Dict]]] = None,
+        self,
+        embedding: Sequence[Sequence[float]],
+        collection_name: Union[str, Sequence[str]],
+        metadata: Optional[Union[Dict, Sequence[Dict]]] = None,
     ) -> bool:
         """Add embeddings to the data store. This is the most general way to add embeddings to the database.
         ⚠️ It is recommended to use the more specific methods below when possible.
@@ -127,16 +127,16 @@ class API(ABC):
         pass
 
     @abstractmethod
-    def fetch(
-            self,
-            where: Optional[Dict[str, str]] = {},
-            sort: Optional[str] = None,
-            limit: Optional[int] = None,
-            offset: Optional[int] = None,
-            page: Optional[int] = None,
-            page_size: Optional[int] = None,
+    def get(
+        self,
+        where: Optional[Dict[str, str]] = {},
+        sort: Optional[str] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None,
     ) -> pd.DataFrame:
-        """Fetches embeddings from the database. Supports filtering, sorting, and pagination.
+        """Gets embeddings from the database. Supports filtering, sorting, and pagination.
         ⚠️ This method should not be used directly.
 
         Args:
@@ -173,11 +173,11 @@ class API(ABC):
 
     @abstractmethod
     def query(
-            self,
-            collection_name: str,
-            embeddings: Union[Sequence[Sequence[float]], Sequence[float]],
-            n_results: int = 10,
-            where: Dict[str, str] = {}
+        self,
+        collection_name: str,
+        embeddings: Union[Sequence[Sequence[float]], Sequence[float]],
+        n_results: int = 10,
+        where: Dict[str, str] = {},
     ) -> NearestNeighborsResult:
         """Gets the nearest neighbors of a single embedding
         ⚠️ This method should not be used directly.
@@ -227,4 +227,3 @@ class API(ABC):
 
         """
         pass
-

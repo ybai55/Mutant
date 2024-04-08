@@ -1,7 +1,12 @@
 from mutantdb.db import DB
 from mutantdb.db.index.hnswlib import Hnswlib
-from mutantdb.db.clickhouse import Clickhouse, db_array_schema_to_clickhouse_schema, EMBEDDING_TABLE_SCHEMA, \
-    db_schema_to_keys, COLLECTION_TABLE_SCHEMA
+from mutantdb.db.clickhouse import (
+    Clickhouse,
+    db_array_schema_to_clickhouse_schema,
+    EMBEDDING_TABLE_SCHEMA,
+    db_schema_to_keys,
+    COLLECTION_TABLE_SCHEMA,
+)
 import pandas as pd
 import numpy as np
 import json
@@ -13,16 +18,18 @@ import itertools
 
 def clickhouse_to_duckdb_schema(table_schema):
     for item in table_schema:
-        if 'embedding' in item:
-            item['embedding'] = 'DOUBLE[]'
+        if "embedding" in item:
+            item["embedding"] = "DOUBLE[]"
         # capitalize the key
         item[list(item.keys())[0]] = item[list(item.keys())[0]].upper()
-        if 'NULLABLE' in item[list(item.keys())[0]]:
-            item[list(item.keys())[0]] = item[list(item.keys())[0]].replace('NULLABLE(', '').replace(')', '')
-        if 'UUID' in item[list(item.keys())[0]]:
-            item[list(item.keys())[0]] = 'STRING'
-        if 'FLOAT64' in item[list(item.keys())[0]]:
-            item[list(item.keys())[0]] = 'DOUBLE'
+        if "NULLABLE" in item[list(item.keys())[0]]:
+            item[list(item.keys())[0]] = (
+                item[list(item.keys())[0]].replace("NULLABLE(", "").replace(")", "")
+            )
+        if "UUID" in item[list(item.keys())[0]]:
+            item[list(item.keys())[0]] = "STRING"
+        if "FLOAT64" in item[list(item.keys())[0]]:
+            item[list(item.keys())[0]] = "DOUBLE"
         # NIT: here we need to turn metadata into JSON for duckdb
 
     return table_schema
@@ -46,52 +53,62 @@ class DuckDB(Clickhouse):
         self._conn.execute("LOAD 'json';")
 
     def _create_table_collections(self):
-        self._conn.execute(f'''CREATE TABLE collections (
+        self._conn.execute(
+            f"""CREATE TABLE collections (
             {db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(COLLECTION_TABLE_SCHEMA))}
-        ) ''')
+        ) """
+        )
 
     # duckdb has different types, so we want to convert the clickhouse schema to duckdb schema
     def _create_table_embeddings(self):
-        self._conn.execute(f'''CREATE TABLE embeddings (
+        self._conn.execute(
+            f"""CREATE TABLE embeddings (
             {db_array_schema_to_clickhouse_schema(clickhouse_to_duckdb_schema(EMBEDDING_TABLE_SCHEMA))}
-        ) ''')
+        ) """
+        )
 
     #
     #  UTILITY METHODS
     #
     def get_collection_uuid_from_name(self, name):
-        return self._conn.execute(f'''SELECT uuid FROM collections WHERE name = ?''', [name]).fetchall()[0][0]
+        return self._conn.execute(
+            f"""SELECT uuid FROM collections WHERE name = ?""", [name]
+        ).fetchall()[0][0]
 
-    # 
+    #
     #  COLLECTION METHODS
-    # 
+    #
     def create_collection(self, name, metadata=None):
         if metadata is None:
             metadata = {}
 
         # poor man's unique constraint
         if not self.get_collection(name).empty:
-            raise Exception(f'collection with name {name} already exists')
+            raise Exception(f"collection with name {name} already exists")
 
-        return self._conn.execute(f'''INSERT INTO collections (uuid, name, metadata) VALUES (?, ?, ?)''',
-                                  [str(uuid.uuid4()), name, json.dumps(metadata)])
+        return self._conn.execute(
+            f"""INSERT INTO collections (uuid, name, metadata) VALUES (?, ?, ?)""",
+            [str(uuid.uuid4()), name, json.dumps(metadata)],
+        )
 
     def get_collection(self, name):
-        return self._conn.execute(f'''SELECT * FROM collections WHERE name = ?''', [name]).df()
+        return self._conn.execute(f"""SELECT * FROM collections WHERE name = ?""", [name]).df()
 
     def list_collections(self):
-        return self._conn.execute(f'''SELECT * FROM collections''').fetchall()
+        return self._conn.execute(f"""SELECT * FROM collections""").fetchall()
 
     def update_collection(self, name, metadata):
-        return self._conn.execute(f'''UPDATE collections SET metadata = ? WHERE name = ?''',
-                                  [json.dumps(metadata), name])
+        return self._conn.execute(
+            f"""UPDATE collections SET metadata = ? WHERE name = ?""", [json.dumps(metadata), name]
+        )
 
     def delete_collection(self, name):
-        return self._conn.execute(f'''DELETE FROM collections WHERE name = ?''', [name])
+        print("duckdb: delete name is: " + name)
+        return self._conn.execute(f"""DELETE FROM collections WHERE name = ?""", [name])
 
-    # 
+    #
     #  ITEM METHODS
-    # 
+    #
     # the execute many syntax is different than clickhouse, the (?,?) syntax is different than clickhouse
     def add(self, collection_uuid, embedding, metadata=None, documents=None, ids=None):
 
@@ -99,12 +116,24 @@ class DuckDB(Clickhouse):
 
         data_to_insert = []
         for i in range(len(embedding)):
-            data_to_insert.append([collection_uuid, str(uuid.uuid4()), embedding[i], metadata[i], documents[i], ids[i]])
+            data_to_insert.append(
+                [
+                    collection_uuid,
+                    str(uuid.uuid4()),
+                    embedding[i],
+                    metadata[i],
+                    documents[i],
+                    ids[i],
+                ]
+            )
 
         insert_string = "collection_uuid, uuid, embedding, metadata, document, id"
 
-        self._conn.executemany(f'''
-         INSERT INTO embeddings ({insert_string}) VALUES (?,?,?,?,?,?)''', data_to_insert)
+        self._conn.executemany(
+            f"""
+         INSERT INTO embeddings ({insert_string}) VALUES (?,?,?,?,?,?)""",
+            data_to_insert,
+        )
 
         return [uuid.UUID(x[1]) for x in data_to_insert]  # return uuids
 
@@ -119,19 +148,27 @@ class DuckDB(Clickhouse):
     def _filter_metadata(self, key, value):
         return f" json_extract_string(metadata,'$.{key}') = '{value}'"
 
-    def _fetch(self, where):
-        val = self._conn.execute(f'''SELECT {db_schema_to_keys()} FROM embeddings {where}''').df()
-        # Convert UUID strings to UUID objects
-        val['uuid'] = val['uuid'].apply(lambda x: uuid.UUID(x))
+    def _get(self, where):
+        val = self._conn.execute(f"""SELECT {db_schema_to_keys()} FROM embeddings {where}""").fetchall()
+
+        for i in range(len(val)):
+            val[i] = list(val[i])
+            val[i][0] = uuid.UUID(val[i][0])
+            val[i][1] = uuid.UUID(val[i][1])
+
         return val
 
     def _delete(self, where_str):
-        uuids_deleted = self._conn.execute(f'''SELECT uuid FROM embeddings {where_str}''').fetchall()
-        self._conn.execute(f'''
+        uuids_deleted = self._conn.execute(
+            f"""SELECT uuid FROM embeddings {where_str}"""
+        ).fetchall()
+        self._conn.execute(
+            f"""
             DELETE FROM
                 embeddings
         {where_str}
-        ''').fetchall()[0]
+        """
+        ).fetchall()[0]
         return [uuid.UUID(x[0]) for x in uuids_deleted]
 
     def get_by_ids(self, ids=list):
@@ -143,22 +180,24 @@ class DuckDB(Clickhouse):
             # create an empty pandas dataframe
             return pd.DataFrame()
 
-        return self._conn.execute(f'''
+        return self._conn.execute(
+            f"""
             SELECT
                 {db_schema_to_keys()}
             FROM
                 embeddings
             WHERE
                 uuid IN ({','.join([("'" + str(x) + "'") for x in ids])})
-        ''').df()
+        """
+        ).df()
 
     def raw_sql(self, sql):
         return self._conn.execute(sql).df()
 
     # TODO: This method should share logic with clickhouse impl
     def reset(self):
-        self._conn.execute('DROP TABLE collections')
-        self._conn.execute('DROP TABLE embeddings')
+        self._conn.execute("DROP TABLE collections")
+        self._conn.execute("DROP TABLE embeddings")
         self._create_table_collections()
         self._create_table_embeddings()
 
@@ -181,9 +220,9 @@ class PersistentDuckDB(DuckDB):
         return self._save_folder
 
     def persist(self):
-        '''
+        """
         Persist the database to disk
-        '''
+        """
         print("Persisting DB to disk, putting it in the save folder", self._save_folder)
         if self._conn is None:
             return
@@ -192,17 +231,19 @@ class PersistentDuckDB(DuckDB):
         if self.count() == 0:
             return
 
-        self._conn.execute(f'''
+        self._conn.execute(
+            f"""
             COPY
                 (SELECT * FROM embeddings)
             TO '{self._save_folder}/mutant.parquet'
                 (FORMAT PARQUET);
-        ''')
+        """
+        )
 
     def load(self):
-        '''
+        """
         Load the database from disk
-        '''
+        """
         import os
 
         # load in the embeddings
