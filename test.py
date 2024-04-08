@@ -1,9 +1,9 @@
 import mutantdb
 from mutantdb.config import Settings
 
-mutant = mutantdb.init(Settings(mutant_api_impl="rest",
-                                mutant_server_host="localhost",
-                                mutant_server_http_port="8000"))
+mutant = mutantdb.Client(Settings(mutant_api_impl="rest",
+                                  mutant_server_host="localhost",
+                                  mutant_server_http_port="8000"))
 
 mutant.reset()
 

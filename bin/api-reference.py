@@ -4,10 +4,10 @@ import mutantdb
 from mutantdb.config import Settings
 
 # run in in-memory mode
-mutant_api = mutantdb.init()
+mutant_api = mutantdb.Client()
 
 # uncomment to run in client-server mode
-# mutant_api = mutantdb.init(Settings(mutant_api_impl="rest",
+# mutant_api = mutantdb.Client(Settings(mutant_api_impl="rest",
 #                               mutant_server_host="localhost",
 #                               mutant_server_http_port="8000") )
 

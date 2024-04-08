@@ -42,7 +42,7 @@ def get_db(settings=__settings):
         raise Exception(f"Unknown value '{setting} for mutant_db_impl")
 
 
-def init(settings=__settings):
+def Client(settings=__settings):
     """Return a mutant.API instance based on the provided or environmental
        settings, optionally overriding the DB instance."""
 

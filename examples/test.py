@@ -83,7 +83,7 @@ class EmbeddingHook:
 embedding_hook = EmbeddingHook(model.fc2)
 
 
-mutant_client = mutantdb.init()
+mutant_client = mutantdb.Client()
 
 # Send training data to Mutant
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=64)
