@@ -1,16 +1,33 @@
-FROM python:3.10
+FROM python:3.10-slim-bookworm as builder
 
-#RUN apt-get update -qq
-#RUN apt-get install python3.10 python3-pip -y --no-install-recommends && rm -rf /var/lib/apt/lists_/*
+RUN apt-get update --fix-missing && apt-get install -y --fix-missing \
+    build-essential \
+    gcc \
+    g++ && \
+    rm -rf /var/lib/apt/lists/*
 
-WORKDIR /mutant
+RUN mkdir /install
+WORKDIR /install
 
 COPY ./requirements.txt requirements.txt
 
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
+RUN pip install --no-cache-dir --upgrade --prefix="/install" -r requirements.txt
 
-COPY ./ /
+FROM python:3.10-slim-bookworm as final
+
+RUN apt-get update --fix-missing && apt-get install -y --fix-missing \
+    build-essential \
+    gcc \
+    g++ && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN mkdir /mutant
+WORKDIR /mutant
+
+COPY --from=builder /install /usr/local
+COPY ./bin/docker_entrypoint.sh /docker_entrypoint.sh
+COPY ./ /mutant
 
 EXPOSE 8000
 
-CMD ["uvicorn", "mutantdb.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1", "--proxy-headers"]
+CMD ["/docker_entrypoint.sh"]
