@@ -1,0 +1,21 @@
+version: '3.9'
+
+networks:
+  test_net:
+    driver: bridge
+
+services:
+  server:
+    image: ghcr.io/mutant-db/mutant:latest
+    volumes:
+      - index_data:/mutant/.mutant/index
+    ports:
+      - 8000:8000
+    networks:
+      - net
+
+volumes:
+  test_index_data:
+    driver: local
+  test_backups:
+    driver: local

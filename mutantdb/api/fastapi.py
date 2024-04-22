@@ -1,29 +1,68 @@
-from typing import Callable, Dict, Optional
+from typing import Optional, cast
 from mutantdb.api import API
-from mutantdb.errors import NoDatapointsException
-import pandas as pd
+from mutantdb.config import Settings, System
+from mutantdb.api.types import (
+    Documents,
+    Embeddings,
+    EmbeddingFunction,
+    IDs,
+    Include,
+    Metadatas,
+    Where,
+    WhereDocument,
+    GetResult,
+    QueryResult,
+    CollectionMetadata,
+)
+import mutantdb.utils.embedding_functions as ef
 import requests
 import json
 from typing import Sequence
 from mutantdb.api.models.Collection import Collection
+import mutantdb.errors as errors
+from uuid import UUID
+from mutantdb.telemetry import Telemetry
+from overrides import override
 
 
 class FastAPI(API):
-    def __init__(self, settings):
+    _settings: Settings
+
+    def __init__(self, system: System):
+        super().__init__(system)
+        url_prefix = "https" if system.settings.mutant_server_ssl_enabled else "http"
+        system.settings.require("mutant_server_host")
+        system.settings.require("mutant_server_http_port")
+
+        self._telemetry_client = self.require(Telemetry)
+        self._settings = system.settings
+
+        port_suffix = (
+            f":{system.settings.mutant_server_http_port}"
+            if system.settings.mutant_server_http_port
+            else ""
+        )
         self._api_url = (
-            f"http://{settings.mutant_server_host}:{settings.mutant_server_http_port}/api/v1"
+            f"{url_prefix}://{system.settings.mutant_server_host}{port_suffix}/api/v1"
         )
 
-    def heartbeat(self):
+        self._header = system.settings.mutant_server_headers
+        self._session = requests.Session()
+        if self._header is not None:
+            self._session.headers.update(self._header)
+
+    @override
+    def heartbeat(self) -> int:
         """Returns the current server time in nanoseconds to check if the server is alive"""
-        resp = requests.get(self._api_url)
-        resp.raise_for_status()
+        resp = self._session.get(self._api_url)
+        raise_mutant_error(resp)
         return int(resp.json()["nanosecond heartbeat"])
 
+    @override
     def list_collections(self) -> Sequence[Collection]:
         """Returns a list of all collections"""
-        resp = requests.get(self._api_url + "/collections")
-        resp.raise_for_status()
+        resp = self._session.get(self._api_url + "/collections")
+        raise_mutant_error(resp)
         json_collections = resp.json()
         collections = []
         for json_collection in json_collections:
@@ -31,174 +70,316 @@ class FastAPI(API):
 
         return collections
 
-    def create_collection(self,
-                          name: str,
-                          metadata: Optional[Dict] = None,
-                          embedding_fn: Optional[Callable] = None) -> Collection:
+    @override
+    def create_collection(
+        self,
+        name: str,
+        metadata: Optional[CollectionMetadata] = None,
+        embedding_function: Optional[EmbeddingFunction] = ef.DefaultEmbeddingFunction(),
+        get_or_create: bool = False,
+    ) -> Collection:
         """Creates a collection"""
-        resp = requests.post(
-            self._api_url + "/collections", data=json.dumps({"name": name, "metadata": metadata})
+        resp = self._session.post(
+            self._api_url + "/collections",
+            data=json.dumps(
+                {"name": name, "metadata": metadata, "get_or_create": get_or_create}
+            ),
         )
-        resp.raise_for_status()
-        return Collection(client=self, name=name, embedding_fn=embedding_fn)
+        raise_mutant_error(resp)
+        resp_json = resp.json()
+        return Collection(
+            client=self,
+            id=resp_json["id"],
+            name=resp_json["name"],
+            embedding_function=embedding_function,
+            metadata=resp_json["metadata"],
+        )
 
-    def get_collection(self, name: str) -> Collection:
+    @override
+    def get_collection(
+        self,
+        name: str,
+        embedding_function: Optional[EmbeddingFunction] = ef.DefaultEmbeddingFunction(),
+    ) -> Collection:
         """Returns a collection"""
-        resp = requests.get(self._api_url + "/collections/" + name)
-        resp.raise_for_status()
-        return Collection(client=self, name=name)
-
-    def modify(self, current_name, new_name: str, new_metadata: Optional[Dict] = None) -> int:
-        """Updates a collection"""
-        resp = requests.put(
-            self._api_url + "/collections/" + current_name,
-            data=json.dumps({"metadata": new_metadata, "name": new_name}),
+        resp = self._session.get(self._api_url + "/collections/" + name)
+        raise_mutant_error(resp)
+        resp_json = resp.json()
+        return Collection(
+            client=self,
+            name=resp_json["name"],
+            id=resp_json["id"],
+            embedding_function=embedding_function,
+            metadata=resp_json["metadata"],
         )
-        resp.raise_for_status()
-        return resp.json()
 
-    def delete_collection(self, name: str) -> int:
+    @override
+    def get_or_create_collection(
+        self,
+        name: str,
+        metadata: Optional[CollectionMetadata] = None,
+        embedding_function: Optional[EmbeddingFunction] = ef.DefaultEmbeddingFunction(),
+    ) -> Collection:
+        return self.create_collection(
+            name, metadata, embedding_function, get_or_create=True
+        )
+
+    @override
+    def _modify(
+        self,
+        id: UUID,
+        new_name: Optional[str] = None,
+        new_metadata: Optional[CollectionMetadata] = None,
+    ) -> None:
+        """Updates a collection"""
+        resp = self._session.put(
+            self._api_url + "/collections/" + str(id),
+            data=json.dumps({"new_metadata": new_metadata, "new_name": new_name}),
+        )
+        raise_mutant_error(resp)
+
+    @override
+    def delete_collection(self, name: str) -> None:
         """Deletes a collection"""
-        resp = requests.delete(self._api_url + "/collections/" + name)
-        resp.raise_for_status()
-        return resp.json()
+        resp = self._session.delete(self._api_url + "/collections/" + name)
+        raise_mutant_error(resp)
 
-    def _count(self, collection_name: str):
+    @override
+    def _count(self, collection_id: UUID) -> int:
         """Returns the number of embeddings in the database"""
-        resp = requests.get(self._api_url + "/collections/" + collection_name + "/count")
-        resp.raise_for_status()
-        return resp.json()
+        resp = self._session.get(
+            self._api_url + "/collections/" + str(collection_id) + "/count"
+        )
+        raise_mutant_error(resp)
+        return cast(int, resp.json())
 
-    def _peek(self, collection_name, limit=10):
-        return self._get(collection_name, limit=limit)
+    @override
+    def _peek(self, collection_id: UUID, n: int = 10) -> GetResult:
+        return self._get(
+            collection_id,
+            limit=n,
+            include=["embeddings", "documents", "metadatas"],
+        )
 
+    @override
     def _get(
         self,
-        collection_name,
-        ids=None,
-        where={},
-        sort=None,
-        limit=None,
-        offset=None,
-        page=None,
-        page_size=None,
-    ):
-        """Gets embeddings from the database"""
+        collection_id: UUID,
+        ids: Optional[IDs] = None,
+        where: Optional[Where] = {},
+        sort: Optional[str] = None,
+        limit: Optional[int] = None,
+        offset: Optional[int] = None,
+        page: Optional[int] = None,
+        page_size: Optional[int] = None,
+        where_document: Optional[WhereDocument] = {},
+        include: Include = ["metadatas", "documents"],
+    ) -> GetResult:
         if page and page_size:
             offset = (page - 1) * page_size
             limit = page_size
 
-        resp = requests.post(
-            self._api_url + "/collections/" + collection_name + "/get",
-            data=json.dumps(
-                {"ids": ids, "where": where, "sort": sort, "limit": limit, "offset": offset}
-            ),
-        )
-
-        resp.raise_for_status()
-        return resp.json()
-
-    def _delete(self, collection_name, ids=None, where={}):
-        """Deletes embeddings from the database"""
-
-        resp = requests.post(
-            self._api_url + "/collections/" + collection_name + "/delete",
-            data=json.dumps({"where": where, "ids": ids}),
-        )
-
-        resp.raise_for_status()
-        return resp.json()
-
-    def _add(
-        self,
-        ids,
-        collection_name,
-        embeddings,
-        metadatas=None,
-        documents=None,
-        increment_index=True,
-    ):
-        """
-        Adds a batch of embeddings to the database
-        - pass in column oriented data lists
-        - by default, the index is progressively built up as you add more data. If for ingestion performance reasons you want to disable this, set increment_index to False
-        -     and then manually create the index yourself with collection.create_index()
-        """
-        resp = requests.post(
-            self._api_url + "/collections/" + collection_name + "/add",
+        resp = self._session.post(
+            self._api_url + "/collections/" + str(collection_id) + "/get",
             data=json.dumps(
                 {
-                    "embeddings": embeddings,
-                    "metadatas": metadatas,
-                    "documents": documents,
                     "ids": ids,
-                    "increment_index": increment_index,
+                    "where": where,
+                    "sort": sort,
+                    "limit": limit,
+                    "offset": offset,
+                    "where_document": where_document,
+                    "include": include,
                 }
             ),
         )
 
-        resp.raise_for_status
+        raise_mutant_error(resp)
+        body = resp.json()
+        return GetResult(
+            ids=body["ids"],
+            embeddings=body.get("embeddings", None),
+            metadatas=body.get("metadatas", None),
+            documents=body.get("documents", None),
+        )
+
+    @override
+    def _delete(
+        self,
+        collection_id: UUID,
+        ids: Optional[IDs] = None,
+        where: Optional[Where] = {},
+        where_document: Optional[WhereDocument] = {},
+    ) -> IDs:
+        """Deletes embeddings from the database"""
+        resp = self._session.post(
+            self._api_url + "/collections/" + str(collection_id) + "/delete",
+            data=json.dumps(
+                {"where": where, "ids": ids, "where_document": where_document}
+            ),
+        )
+
+        raise_mutant_error(resp)
+        return cast(IDs, resp.json())
+
+    @override
+    def _add(
+        self,
+        ids: IDs,
+        collection_id: UUID,
+        embeddings: Embeddings,
+        metadatas: Optional[Metadatas] = None,
+        documents: Optional[Documents] = None,
+    ) -> bool:
+        """
+        Adds a batch of embeddings to the database
+        - pass in column oriented data lists
+        """
+        resp = self._session.post(
+            self._api_url + "/collections/" + str(collection_id) + "/add",
+            data=json.dumps(
+                {
+                    "ids": ids,
+                    "embeddings": embeddings,
+                    "metadatas": metadatas,
+                    "documents": documents,
+                }
+            ),
+        )
+
+        raise_mutant_error(resp)
         return True
 
+    @override
     def _update(
         self,
-        collection_name,
-        embedding,
-        metadata=None,
-    ):
+        collection_id: UUID,
+        ids: IDs,
+        embeddings: Optional[Embeddings] = None,
+        metadatas: Optional[Metadatas] = None,
+        documents: Optional[Documents] = None,
+    ) -> bool:
         """
         Updates a batch of embeddings in the database
         - pass in column oriented data lists
         """
-
-        resp = requests.post(
-            self._api_url + "/collections/" + collection_name + "/update",
+        resp = self._session.post(
+            self._api_url + "/collections/" + str(collection_id) + "/update",
             data=json.dumps(
                 {
-                    "embedding": embedding,
-                    "metadata": metadata,
+                    "ids": ids,
+                    "embeddings": embeddings,
+                    "metadatas": metadatas,
+                    "documents": documents,
                 }
             ),
         )
 
-        resp.raise_for_status
+        resp.raise_for_status()
         return True
 
-    def _query(self, collection_name, query_embeddings, n_results=10, where={}):
-        """Gets the nearest neighbors of a single embedding"""
-
-        resp = requests.post(
-            self._api_url + "/collections/" + collection_name + "/query",
+    @override
+    def _upsert(
+        self,
+        collection_id: UUID,
+        ids: IDs,
+        embeddings: Embeddings,
+        metadatas: Optional[Metadatas] = None,
+        documents: Optional[Documents] = None,
+    ) -> bool:
+        """
+        Upserts a batch of embeddings in the database
+        - pass in column oriented data lists
+        """
+        resp = self._session.post(
+            self._api_url + "/collections/" + str(collection_id) + "/upsert",
             data=json.dumps(
-                {"query_embeddings": query_embeddings, "n_results": n_results, "where": where}
+                {
+                    "ids": ids,
+                    "embeddings": embeddings,
+                    "metadatas": metadatas,
+                    "documents": documents,
+                }
             ),
         )
 
         resp.raise_for_status()
+        return True
 
-        val = resp.json()
-        if "error" in val:
-            if val["error"] == "no data points":
-                raise NoDatapointsException("No datapoints found for the supplied filter")
-            else:
-                raise Exception(val["error"])
+    @override
+    def _query(
+        self,
+        collection_id: UUID,
+        query_embeddings: Embeddings,
+        n_results: int = 10,
+        where: Optional[Where] = {},
+        where_document: Optional[WhereDocument] = {},
+        include: Include = ["metadatas", "documents", "distances"],
+    ) -> QueryResult:
+        """Gets the nearest neighbors of a single embedding"""
+        resp = self._session.post(
+            self._api_url + "/collections/" + str(collection_id) + "/query",
+            data=json.dumps(
+                {
+                    "query_embeddings": query_embeddings,
+                    "n_results": n_results,
+                    "where": where,
+                    "where_document": where_document,
+                    "include": include,
+                }
+            ),
+        )
 
-        return val
+        raise_mutant_error(resp)
+        body = resp.json()
 
-    def reset(self):
+        return QueryResult(
+            ids=body["ids"],
+            distances=body.get("distances", None),
+            embeddings=body.get("embeddings", None),
+            metadatas=body.get("metadatas", None),
+            documents=body.get("documents", None),
+        )
+
+    @override
+    def reset(self) -> bool:
         """Resets the database"""
-        resp = requests.post(self._api_url + "/reset")
-        resp.raise_for_status()
-        return resp.json
+        resp = self._session.post(self._api_url + "/reset")
+        raise_mutant_error(resp)
+        return cast(bool, resp.json())
 
-    def raw_sql(self, sql):
-        """Runs a raw SQL query against the database"""
-        resp = requests.post(self._api_url + "/raw_sql", data=json.dumps({"raw_sql": sql}))
-        resp.raise_for_status()
-        return pd.DataFrame.from_dict(resp.json())
+    @override
+    def get_version(self) -> str:
+        """Returns the version of the server"""
+        resp = self._session.get(self._api_url + "/version")
+        raise_mutant_error(resp)
+        return cast(str, resp.json())
 
-    def create_index(self, collection_name: str):
-        """Creates an index for the given space key"""
-        resp = requests.post(self._api_url + "/collections/" + collection_name + "/create_index")
+    @override
+    def get_settings(self) -> Settings:
+        """Returns the settings of the client"""
+        return self._settings
+
+
+def raise_mutant_error(resp: requests.Response) -> None:
+    """Raises an error if the response is not ok, using a ChromaError if possible"""
+    if resp.ok:
+        return
+
+    mutant_error = None
+    try:
+        body = resp.json()
+        if "error" in body:
+            if body["error"] in errors.error_types:
+                mutant_error = errors.error_types[body["error"]](body["message"])
+
+    except BaseException:
+        pass
+
+    if mutant_error:
+        raise mutant_error
+
+    try:
         resp.raise_for_status()
-        return resp.json()
+    except requests.HTTPError:
+        raise (Exception(resp.text))

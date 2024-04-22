@@ -25,3 +25,8 @@ venv
 dist
 build
 data
+
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+.hypothesis/
