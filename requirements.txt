@@ -1,4 +1,4 @@
-mutant-hnswlib==0.7.2
+chroma-hnswlib==0.7.2
 fastapi>=0.95.2, <0.100.0
 graphlib_backport==1.0.3
 importlib-resources

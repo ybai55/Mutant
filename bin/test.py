@@ -1,7 +1,6 @@
 # Sanity check script to ensure that the Mutant client can connect
-# and is capable of recieving data.
+# and is capable of receiving data.
 import mutantdb
-from mutantdb.config import Settings
 
 # run in in-memory mode
 mutant_api = mutantdb.Client()

@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/bin/bash
 
 # Verify PIP Tarball
 tarball=$(readlink -f $1)
