@@ -19,16 +19,16 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 
-LEGACY_ERROR = """\033[91mYou are using a deprecated configuration of Chroma.
+LEGACY_ERROR = """\033[91mYou are using a deprecated configuration of Mutant.
 
 \033[94mIf you do not have data you wish to migrate, you only need to change how you construct
-your Chroma client. Please see the "New Clients" section of https://docs.trymutant.com/migration.
+your Mutant client. Please see the "New Clients" section of https://docs.trymutant.com/migration.
 ________________________________________________________________________________________________
 
 If you do have data you wish to migrate, we have a migration tool you can use in order to
-migrate your data to the new Chroma architecture.
+migrate your data to the new Mutant architecture.
 Please `pip install mutant-migrate` and run `mutant-migrate` to migrate your data and then
-change how you construct your Chroma client.
+change how you construct your Mutant client.
 
 See https://docs.trymutant.com/migration for more information or join our discord at https://discord.gg/8g5FESbj for help!\033[0m"""
 
@@ -166,7 +166,7 @@ class System(Component):
             # The thin client is a system with only the API component
             if settings["mutant_api_impl"] != "mutantdb.api.fastapi.FastAPI":
                 raise RuntimeError(
-                    "Chroma is running in http-only client mode, and can only be run with 'mutantdb.api.fastapi.FastAPI' as the mutant_api_impl. \
+                    "Mutant is running in http-only client mode, and can only be run with 'mutantdb.api.fastapi.FastAPI' as the mutant_api_impl. \
             see https://docs.trymutant.com/usage-guide?lang=py#using-the-python-http-only-client for more information."
                 )
 
